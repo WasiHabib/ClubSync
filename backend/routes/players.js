@@ -53,10 +53,10 @@ router.get('/',
 
             const [players] = await db.query(query, params);
 
-            // Parse JSON attributes
+            // Parse JSON attributes if they're strings
             const playersWithParsedAttrs = players.map(player => ({
                 ...player,
-                attributes: player.attributes ? JSON.parse(player.attributes) : null
+                attributes: typeof player.attributes === 'string' ? JSON.parse(player.attributes) : player.attributes
             }));
 
             res.json({
@@ -66,7 +66,7 @@ router.get('/',
             });
         } catch (error) {
             console.error('Error fetching players:', error);
-            res.status(500).json({ success: false, message: 'Failed to fetch players' });
+            res.status(500).json({ success: false, message: error.message, stack: error.stack });
         }
     }
 );

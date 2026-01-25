@@ -68,6 +68,25 @@ function Matches() {
         }
     };
 
+    const [matchPlayers, setMatchPlayers] = useState([]);
+
+    const fetchMatchPlayers = async (homeClubId, awayClubId) => {
+        try {
+            const [homeRes, awayRes] = await Promise.all([
+                api.get(`/players?club_id=${homeClubId}&limit=100`),
+                api.get(`/players?club_id=${awayClubId}&limit=100`)
+            ]);
+
+            let players = [];
+            if (homeRes.data.success) players = [...players, ...homeRes.data.data];
+            if (awayRes.data.success) players = [...players, ...awayRes.data.data];
+
+            setMatchPlayers(players);
+        } catch (error) {
+            console.error('Error fetching match players:', error);
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
@@ -162,6 +181,7 @@ function Matches() {
                                     <button
                                         onClick={() => {
                                             setSelectedMatch(match);
+                                            fetchMatchPlayers(match.home_club_id, match.away_club_id);
                                             setShowEventModal(true);
                                             setEventData({
                                                 event_type: 'GOAL',
@@ -354,11 +374,35 @@ function Matches() {
                                     <label>Club *</label>
                                     <select
                                         value={eventData.club_id}
-                                        onChange={(e) => setEventData({ ...eventData, club_id: e.target.value })}
+                                        onChange={(e) => {
+                                            setEventData({
+                                                ...eventData,
+                                                club_id: e.target.value,
+                                                player_id: '' // Reset player when club changes
+                                            });
+                                        }}
                                         required
                                     >
                                         <option value={selectedMatch.home_club_id}>{selectedMatch.home_club_name}</option>
                                         <option value={selectedMatch.away_club_id}>{selectedMatch.away_club_name}</option>
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label>Player *</label>
+                                    <select
+                                        value={eventData.player_id}
+                                        onChange={(e) => setEventData({ ...eventData, player_id: e.target.value })}
+                                        required
+                                    >
+                                        <option value="">Select Player</option>
+                                        {matchPlayers
+                                            .filter(p => p.current_club_id == eventData.club_id)
+                                            .map(player => (
+                                                <option key={player.player_id} value={player.player_id}>
+                                                    {player.jersey_number ? `#${player.jersey_number} ` : ''}{player.player_name} ({player.position})
+                                                </option>
+                                            ))
+                                        }
                                     </select>
                                 </div>
                                 <div className="grid grid-2">
@@ -383,15 +427,6 @@ function Matches() {
                                             onChange={(e) => setEventData({ ...eventData, extra_time: e.target.value })}
                                         />
                                     </div>
-                                </div>
-                                <div style={{
-                                    padding: '0.75rem',
-                                    background: 'rgba(251, 191, 36, 0.1)',
-                                    borderRadius: 'var(--radius-md)',
-                                    fontSize: '0.85rem',
-                                    color: 'var(--accent-yellow)'
-                                }}>
-                                    ℹ️ Note: Player selection will be added in the next update
                                 </div>
                             </div>
                             <div className="modal-footer">
