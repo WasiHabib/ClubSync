@@ -53,12 +53,19 @@ router.get('/:id', async (req, res) => {
             [id]
         );
 
+        // Get club trophies
+        const [trophies] = await db.query(
+            'SELECT * FROM TROPHY WHERE club_id = ? ORDER BY season_won DESC',
+            [id]
+        );
+
         res.json({
             success: true,
             data: {
                 ...clubs[0],
                 players,
-                manager: managers[0] || null
+                manager: managers[0] || null,
+                trophies
             }
         });
     } catch (error) {

@@ -107,7 +107,7 @@ function Home({ user }) {
                             <a href="/stats" className="btn btn-secondary" style={{ justifyContent: 'space-between' }}>
                                 <span>View Statistics</span> <span>→</span>
                             </a>
-                            {user.role === 'ADMIN' && (
+                            {user && user.role === 'ADMIN' && (
                                 <a href="/admin" className="btn btn-danger" style={{ justifyContent: 'space-between' }}>
                                     <span>Admin Panel</span> <span>🔐</span>
                                 </a>
@@ -128,7 +128,7 @@ function Home({ user }) {
                             }}>
                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Your Role</div>
                                 <div style={{ fontSize: '1.2rem', fontWeight: '700', color: 'var(--status-success)' }}>
-                                    {user.role}
+                                    {user ? user.role : 'GUEST'}
                                 </div>
                             </div>
                             <div style={{

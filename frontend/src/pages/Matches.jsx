@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../api';
 
-function Matches() {
+function Matches({ user }) {
     const [matches, setMatches] = useState([]);
     const [seasons, setSeasons] = useState([]);
     const [clubs, setClubs] = useState([]);
@@ -156,9 +156,11 @@ function Matches() {
                         <h1>Match Management</h1>
                         <p style={{ margin: 0 }}>Schedule matches and log match events</p>
                     </div>
-                    <button onClick={() => setShowModal(true)} className="btn btn-success">
-                        + Create Match
-                    </button>
+                    {user && user.role === 'ADMIN' && (
+                        <button onClick={() => setShowModal(true)} className="btn btn-success">
+                            + Create Match
+                        </button>
+                    )}
                 </div>
 
                 {matches.length === 0 ? (
@@ -178,24 +180,26 @@ function Matches() {
                                             {new Date(match.match_date).toLocaleString()}
                                         </div>
                                     </div>
-                                    <button
-                                        onClick={() => {
-                                            setSelectedMatch(match);
-                                            fetchMatchPlayers(match.home_club_id, match.away_club_id);
-                                            setShowEventModal(true);
-                                            setEventData({
-                                                event_type: 'GOAL',
-                                                player_id: '',
-                                                club_id: match.home_club_id,
-                                                minute: '',
-                                                extra_time: 0
-                                            });
-                                        }}
-                                        className="btn btn-primary"
-                                        style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
-                                    >
-                                        Log Event
-                                    </button>
+                                    {user && user.role === 'ADMIN' && (
+                                        <button
+                                            onClick={() => {
+                                                setSelectedMatch(match);
+                                                fetchMatchPlayers(match.home_club_id, match.away_club_id);
+                                                setShowEventModal(true);
+                                                setEventData({
+                                                    event_type: 'GOAL',
+                                                    player_id: '',
+                                                    club_id: match.home_club_id,
+                                                    minute: '',
+                                                    extra_time: 0
+                                                });
+                                            }}
+                                            className="btn btn-primary"
+                                            style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
+                                        >
+                                            Log Event
+                                        </button>
+                                    )}
                                 </div>
 
                                 <div style={{

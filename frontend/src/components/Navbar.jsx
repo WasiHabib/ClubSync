@@ -44,6 +44,20 @@ function Navbar({ user, onLogout }) {
                             Dashboard
                         </Link>
                         <Link
+                            to="/clubs"
+                            style={{
+                                color: isActive('/clubs') ? 'var(--status-success)' : 'var(--text-secondary)',
+                                fontWeight: isActive('/clubs') ? 700 : 400,
+                                textDecoration: 'none',
+                                transition: 'color 0.3s ease',
+                                textTransform: 'uppercase',
+                                fontSize: '0.9rem',
+                                letterSpacing: '0.05em'
+                            }}
+                        >
+                            Clubs
+                        </Link>
+                        <Link
                             to="/players"
                             style={{
                                 color: isActive('/players') ? 'var(--status-success)' : 'var(--text-secondary)',
@@ -85,7 +99,7 @@ function Navbar({ user, onLogout }) {
                         >
                             Stats Center
                         </Link>
-                        {user.role === 'ADMIN' && (
+                        {user && user.role === 'ADMIN' && (
                             <Link
                                 to="/admin"
                                 style={{
@@ -105,15 +119,23 @@ function Navbar({ user, onLogout }) {
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontFamily: 'var(--font-heading)' }}>
-                        {user.username}
-                        <span className="badge badge-info" style={{ marginLeft: '0.5rem' }}>
-                            {user.role}
-                        </span>
-                    </span>
-                    <button onClick={onLogout} className="btn btn-secondary" style={{ padding: '0.5rem 1.5rem', fontSize: '0.8rem' }}>
-                        LOGOUT
-                    </button>
+                    {user ? (
+                        <>
+                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontFamily: 'var(--font-heading)' }}>
+                                {user.username}
+                                <span className="badge badge-info" style={{ marginLeft: '0.5rem' }}>
+                                    {user.role}
+                                </span>
+                            </span>
+                            <button onClick={onLogout} className="btn btn-secondary" style={{ padding: '0.5rem 1.5rem', fontSize: '0.8rem' }}>
+                                LOGOUT
+                            </button>
+                        </>
+                    ) : (
+                        <Link to="/login" className="btn btn-primary" style={{ padding: '0.5rem 1.5rem', fontSize: '0.8rem', textDecoration: 'none' }}>
+                            LOGIN
+                        </Link>
+                    )}
                 </div>
             </div>
         </nav>

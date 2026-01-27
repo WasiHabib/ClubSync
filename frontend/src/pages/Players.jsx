@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../api';
 
-function Players() {
+function Players({ user }) {
     const [players, setPlayers] = useState([]);
     const [clubs, setClubs] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -128,9 +128,11 @@ function Players() {
                         <h1>Player Management</h1>
                         <p style={{ margin: 0 }}>Manage player profiles, contracts, and statistics</p>
                     </div>
-                    <button onClick={() => setShowModal(true)} className="btn btn-success">
-                        + Add Player
-                    </button>
+                    {user && user.role === 'ADMIN' && (
+                        <button onClick={() => setShowModal(true)} className="btn btn-success">
+                            + Add Player
+                        </button>
+                    )}
                 </div>
 
                 <div style={{ marginBottom: '2rem' }}>
@@ -179,15 +181,17 @@ function Players() {
                                         <td>{player.jersey_number || '-'}</td>
                                         <td>{new Date(player.date_of_birth).toLocaleDateString()}</td>
                                         <td>
-                                            <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                                <button
-                                                    onClick={() => handleDelete(player.player_id)}
-                                                    className="btn btn-danger"
-                                                    style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
-                                                >
-                                                    Delete
-                                                </button>
-                                            </div>
+                                            {user && user.role === 'ADMIN' && (
+                                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                    <button
+                                                        onClick={() => handleDelete(player.player_id)}
+                                                        className="btn btn-danger"
+                                                        style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </div>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}

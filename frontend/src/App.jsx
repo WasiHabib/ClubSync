@@ -4,6 +4,8 @@ import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Players from './pages/Players';
 import Matches from './pages/Matches';
+import Clubs from './pages/Clubs';
+import ClubDetails from './pages/ClubDetails';
 import StatsCenter from './pages/StatsCenter';
 import AdminPanel from './pages/AdminPanel';
 import Login from './pages/Login';
@@ -42,12 +44,14 @@ function App() {
 
     return (
         <Router>
-            {user && <Navbar user={user} onLogout={handleLogout} />}
+            <Navbar user={user} onLogout={handleLogout} />
             <Routes>
                 <Route path="/login" element={user ? <Navigate to="/" /> : <Login onLogin={handleLogin} />} />
-                <Route path="/" element={user ? <Home user={user} /> : <Navigate to="/login" />} />
-                <Route path="/players" element={user ? <Players /> : <Navigate to="/login" />} />
-                <Route path="/matches" element={user ? <Matches /> : <Navigate to="/login" />} />
+                <Route path="/" element={<Home user={user} />} />
+                <Route path="/players" element={<Players user={user} />} />
+                <Route path="/clubs" element={<Clubs user={user} />} />
+                <Route path="/clubs/:id" element={<ClubDetails user={user} />} />
+                <Route path="/matches" element={<Matches user={user} />} />
                 <Route path="/stats" element={<StatsCenter />} />
                 <Route path="/admin" element={user && user.role === 'ADMIN' ? <AdminPanel /> : <Navigate to="/" />} />
             </Routes>
