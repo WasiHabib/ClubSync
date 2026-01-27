@@ -7,12 +7,9 @@ function Navbar({ user, onLogout }) {
 
     return (
         <nav style={{
-            background: 'var(--bg-secondary)',
-            borderBottom: '1px solid var(--border-color)',
             position: 'sticky',
             top: 0,
-            zIndex: 100,
-            backdropFilter: 'blur(10px)'
+            zIndex: 100
         }}>
             <div className="container" style={{
                 padding: '1rem var(--spacing-lg)',
@@ -24,11 +21,9 @@ function Navbar({ user, onLogout }) {
                     <Link to="/" style={{
                         fontSize: '1.5rem',
                         fontWeight: '800',
-                        background: 'var(--gradient-success)',
-                        backgroundClip: 'text',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        textDecoration: 'none'
+                        color: 'var(--text-primary)',
+                        textDecoration: 'none',
+                        letterSpacing: '0.05em'
                     }}>
                         ⚽ CLUBSYNC
                     </Link>
@@ -37,10 +32,13 @@ function Navbar({ user, onLogout }) {
                         <Link
                             to="/"
                             style={{
-                                color: isActive('/') ? 'var(--accent-green)' : 'var(--text-secondary)',
-                                fontWeight: isActive('/') ? 600 : 400,
+                                color: isActive('/') ? 'var(--status-success)' : 'var(--text-secondary)',
+                                fontWeight: isActive('/') ? 700 : 400,
                                 textDecoration: 'none',
-                                transition: 'color var(--transition-fast)'
+                                transition: 'color 0.3s ease',
+                                textTransform: 'uppercase',
+                                fontSize: '0.9rem',
+                                letterSpacing: '0.05em'
                             }}
                         >
                             Dashboard
@@ -48,10 +46,13 @@ function Navbar({ user, onLogout }) {
                         <Link
                             to="/players"
                             style={{
-                                color: isActive('/players') ? 'var(--accent-green)' : 'var(--text-secondary)',
-                                fontWeight: isActive('/players') ? 600 : 400,
+                                color: isActive('/players') ? 'var(--status-success)' : 'var(--text-secondary)',
+                                fontWeight: isActive('/players') ? 700 : 400,
                                 textDecoration: 'none',
-                                transition: 'color var(--transition-fast)'
+                                transition: 'color 0.3s ease',
+                                textTransform: 'uppercase',
+                                fontSize: '0.9rem',
+                                letterSpacing: '0.05em'
                             }}
                         >
                             Players
@@ -59,10 +60,13 @@ function Navbar({ user, onLogout }) {
                         <Link
                             to="/matches"
                             style={{
-                                color: isActive('/matches') ? 'var(--accent-green)' : 'var(--text-secondary)',
-                                fontWeight: isActive('/matches') ? 600 : 400,
+                                color: isActive('/matches') ? 'var(--status-success)' : 'var(--text-secondary)',
+                                fontWeight: isActive('/matches') ? 700 : 400,
                                 textDecoration: 'none',
-                                transition: 'color var(--transition-fast)'
+                                transition: 'color 0.3s ease',
+                                textTransform: 'uppercase',
+                                fontSize: '0.9rem',
+                                letterSpacing: '0.05em'
                             }}
                         >
                             Matches
@@ -70,10 +74,13 @@ function Navbar({ user, onLogout }) {
                         <Link
                             to="/stats"
                             style={{
-                                color: isActive('/stats') ? 'var(--accent-green)' : 'var(--text-secondary)',
-                                fontWeight: isActive('/stats') ? 600 : 400,
+                                color: isActive('/stats') ? 'var(--status-success)' : 'var(--text-secondary)',
+                                fontWeight: isActive('/stats') ? 700 : 400,
                                 textDecoration: 'none',
-                                transition: 'color var(--transition-fast)'
+                                transition: 'color 0.3s ease',
+                                textTransform: 'uppercase',
+                                fontSize: '0.9rem',
+                                letterSpacing: '0.05em'
                             }}
                         >
                             Stats Center
@@ -82,10 +89,13 @@ function Navbar({ user, onLogout }) {
                             <Link
                                 to="/admin"
                                 style={{
-                                    color: isActive('/admin') ? 'var(--accent-green)' : 'var(--text-secondary)',
-                                    fontWeight: isActive('/admin') ? 600 : 400,
+                                    color: isActive('/admin') ? 'var(--status-danger)' : 'var(--text-secondary)',
+                                    fontWeight: isActive('/admin') ? 700 : 400,
                                     textDecoration: 'none',
-                                    transition: 'color var(--transition-fast)'
+                                    transition: 'color 0.3s ease',
+                                    textTransform: 'uppercase',
+                                    fontSize: '0.9rem',
+                                    letterSpacing: '0.05em'
                                 }}
                             >
                                 Admin
@@ -95,14 +105,14 @@ function Navbar({ user, onLogout }) {
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontFamily: 'var(--font-heading)' }}>
                         {user.username}
                         <span className="badge badge-info" style={{ marginLeft: '0.5rem' }}>
                             {user.role}
                         </span>
                     </span>
-                    <button onClick={onLogout} className="btn btn-secondary" style={{ padding: '0.5rem 1rem' }}>
-                        Logout
+                    <button onClick={onLogout} className="btn btn-secondary" style={{ padding: '0.5rem 1.5rem', fontSize: '0.8rem' }}>
+                        LOGOUT
                     </button>
                 </div>
             </div>

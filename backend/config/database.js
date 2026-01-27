@@ -15,6 +15,9 @@ const pool = mysql.createPool({
     queueLimit: 0,
     enableKeepAlive: true,
     keepAliveInitialDelay: 0
+    // authPlugins: {
+    //     mysql_native_password: () => () => Buffer.alloc(0)
+    // }
 });
 
 // Get promise-based pool for async/await

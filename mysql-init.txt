@@ -1,0 +1,4 @@
+ALTER USER 'root'@'localhost' IDENTIFIED BY 'newroot123';
+CREATE USER IF NOT EXISTS 'clubsync'@'localhost' IDENTIFIED BY 'clubsync123';
+GRANT ALL PRIVILEGES ON clubsync.* TO 'clubsync'@'localhost';
+FLUSH PRIVILEGES;
