@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../api';
 
 function Players({ user }) {
@@ -6,7 +7,17 @@ function Players({ user }) {
     const [clubs, setClubs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
-    const [searchQuery, setSearchQuery] = useState('');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const [searchQuery, setSearchQuery] = useState(searchParams.get('query') || '');
+
+    // Sync state with URL param
+    useEffect(() => {
+        const query = searchParams.get('query');
+        if (query) {
+            setSearchQuery(query);
+        }
+    }, [searchParams]);
+
     const [formData, setFormData] = useState({
         player_name: '',
         date_of_birth: '',
@@ -140,7 +151,11 @@ function Players({ user }) {
                         type="text"
                         placeholder="🔍 Search players by name or club..."
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={(e) => {
+                            setSearchQuery(e.target.value);
+                            // Optional: Update URL as user types (debounce recommended in prod)
+                            // setSearchParams({ query: e.target.value });
+                        }}
                         style={{ maxWidth: '400px' }}
                     />
                 </div>

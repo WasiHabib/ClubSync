@@ -15,6 +15,13 @@ function ClubDetails({ user }) {
         stadium_capacity: ''
     });
 
+    const [showManagerModal, setShowManagerModal] = useState(false);
+    const [managerData, setManagerData] = useState({
+        manager_name: '',
+        nationality: 'Bangladesh',
+        specialization: 'Balanced'
+    });
+
     useEffect(() => {
         fetchClubDetails();
     }, [id]);
@@ -32,6 +39,14 @@ function ClubDetails({ user }) {
                     stadium_name: response.data.data.stadium_name,
                     stadium_capacity: response.data.data.stadium_capacity
                 });
+
+                if (response.data.data.manager) {
+                    setManagerData({
+                        manager_name: response.data.data.manager.manager_name,
+                        nationality: response.data.data.manager.nationality,
+                        specialization: response.data.data.manager.specialization || 'Balanced'
+                    });
+                }
             }
         } catch (error) {
             console.error('Error fetching club details:', error);
@@ -51,6 +66,20 @@ function ClubDetails({ user }) {
             }
         } catch (error) {
             alert(error.response?.data?.message || 'Failed to update club');
+        }
+    };
+
+    const handleManagerUpdate = async (e) => {
+        e.preventDefault();
+        try {
+            const response = await api.put(`/clubs/${id}/manager`, managerData);
+            if (response.data.success) {
+                alert('Manager updated successfully!');
+                setShowManagerModal(false);
+                fetchClubDetails();
+            }
+        } catch (error) {
+            alert(error.response?.data?.message || 'Failed to update manager');
         }
     };
 
@@ -188,9 +217,20 @@ function ClubDetails({ user }) {
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem', background: 'rgba(255,255,255,0.03)', borderRadius: '4px' }}>
                                 <span style={{ color: 'var(--text-muted)' }}>Head Coach</span>
-                                <span style={{ fontWeight: '600', color: 'var(--status-success)' }}>
-                                    {club.manager ? club.manager.manager_name : 'Vacant'}
-                                </span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <span style={{ fontWeight: '600', color: 'var(--status-success)' }}>
+                                        {club.manager ? club.manager.manager_name : 'Vacant'}
+                                    </span>
+                                    {user && user.role === 'ADMIN' && (
+                                        <button
+                                            onClick={() => setShowManagerModal(true)}
+                                            className="btn btn-secondary"
+                                            style={{ padding: '0.1rem 0.4rem', fontSize: '0.7rem' }}
+                                        >
+                                            ✏️
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
@@ -242,7 +282,16 @@ function ClubDetails({ user }) {
                                                     {player.position}
                                                 </span>
                                             </td>
-                                            <td style={{ padding: '0.5rem', fontWeight: '500' }}>{player.player_name}</td>
+                                            <td style={{ padding: '0.5rem', fontWeight: '500' }}>
+                                                <Link
+                                                    to={`/players?query=${encodeURIComponent(player.player_name)}`}
+                                                    style={{ color: 'var(--text-primary)', textDecoration: 'none' }}
+                                                    onMouseOver={(e) => e.target.style.color = 'var(--status-success)'}
+                                                    onMouseOut={(e) => e.target.style.color = 'var(--text-primary)'}
+                                                >
+                                                    {player.player_name}
+                                                </Link>
+                                            </td>
                                             <td style={{ padding: '0.5rem', color: 'var(--text-muted)' }}>{player.nationality}</td>
                                         </tr>
                                     ))}
@@ -254,6 +303,54 @@ function ClubDetails({ user }) {
                         </div>
                     </div>
                 </div>
+                {showManagerModal && (
+                    <div className="modal-overlay">
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <h2>{club.manager ? 'Edit Manager' : 'Appoint Manager'}</h2>
+                                <button className="close-btn" onClick={() => setShowManagerModal(false)}>&times;</button>
+                            </div>
+                            <form onSubmit={handleManagerUpdate}>
+                                <div className="form-group">
+                                    <label>Manager Name</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        value={managerData.manager_name}
+                                        onChange={(e) => setManagerData({ ...managerData, manager_name: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Nationality</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        value={managerData.nationality}
+                                        onChange={(e) => setManagerData({ ...managerData, nationality: e.target.value })}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Specialization</label>
+                                    <select
+                                        className="form-control"
+                                        value={managerData.specialization}
+                                        onChange={(e) => setManagerData({ ...managerData, specialization: e.target.value })}
+                                    >
+                                        <option value="Balanced">Balanced</option>
+                                        <option value="Offensive">Offensive</option>
+                                        <option value="Defensive">Defensive</option>
+                                        <option value="Youth Development">Youth Development</option>
+                                    </select>
+                                </div>
+                                <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                                    <button type="button" onClick={() => setShowManagerModal(false)} className="btn btn-secondary" style={{ flex: 1 }}>Cancel</button>
+                                    <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Save Changes</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

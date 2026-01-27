@@ -152,4 +152,44 @@ router.put('/:id', async (req, res) => {
     }
 });
 
+// PUT /api/clubs/:id/manager - Update or Create Club Manager
+router.put('/:id/manager', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { manager_name, nationality, specialization } = req.body;
+
+        // Check if club exists
+        const [club] = await db.query('SELECT * FROM CLUB WHERE club_id = ?', [id]);
+        if (club.length === 0) {
+            return res.status(404).json({ success: false, message: 'Club not found' });
+        }
+
+        // Check if club already has a manager
+        const [managers] = await db.query('SELECT * FROM MANAGER WHERE current_club_id = ? AND is_active = TRUE', [id]);
+
+        if (managers.length > 0) {
+            // Update existing manager
+            await db.query(
+                'UPDATE MANAGER SET manager_name = ?, nationality = ?, specialization = ? WHERE manager_id = ?',
+                [manager_name, nationality, specialization || 'Balanced', managers[0].manager_id]
+            );
+        } else {
+            // Create new manager
+            await db.query(
+                `INSERT INTO MANAGER (manager_name, nationality, specialization, current_club_id, date_of_birth) 
+                 VALUES (?, ?, ?, ?, CURDATE())`, // Default DOB to today if not provided (Simplification)
+                [manager_name, nationality, specialization || 'Balanced', id]
+            );
+        }
+
+        res.json({
+            success: true,
+            message: 'Manager updated successfully'
+        });
+    } catch (error) {
+        console.error('Error updating manager:', error);
+        res.status(500).json({ success: false, message: 'Failed to update manager' });
+    }
+});
+
 export default router;
