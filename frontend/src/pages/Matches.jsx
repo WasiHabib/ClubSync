@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../api';
 
 function Matches({ user }) {
@@ -170,83 +171,93 @@ function Matches({ user }) {
                 ) : (
                     <div className="grid" style={{ gap: '1.5rem' }}>
                         {matches.map(match => (
-                            <div key={match.match_id} className="card">
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                                    <div>
-                                        <span className={`badge ${getStatusBadge(match.match_status)}`}>
-                                            {match.match_status}
-                                        </span>
-                                        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
-                                            {new Date(match.match_date).toLocaleString()}
+                            <Link
+                                to={`/matches/${match.match_id}`}
+                                key={match.match_id}
+                                style={{ textDecoration: 'none', color: 'inherit' }}
+                            >
+                                <div className="card" style={{ cursor: 'pointer', transition: 'transform 0.2s' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                                    onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                                >
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                                        <div>
+                                            <span className={`badge ${getStatusBadge(match.match_status)}`}>
+                                                {match.match_status}
+                                            </span>
+                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                                                {new Date(match.match_date).toLocaleString()}
+                                            </div>
+                                        </div>
+                                        {user && user.role === 'ADMIN' && (
+                                            <button
+                                                onClick={(e) => {
+                                                    e.preventDefault(); // Prevent navigation
+                                                    setSelectedMatch(match);
+                                                    fetchMatchPlayers(match.home_club_id, match.away_club_id);
+                                                    setShowEventModal(true);
+                                                    setEventData({
+                                                        event_type: 'GOAL',
+                                                        player_id: '',
+                                                        club_id: match.home_club_id,
+                                                        minute: '',
+                                                        extra_time: 0
+                                                    });
+                                                }}
+                                                className="btn btn-primary"
+                                                style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
+                                            >
+                                                Log Event
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    <div style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        padding: '1.5rem 0'
+                                    }}>
+                                        <div style={{ flex: 1, textAlign: 'center' }}>
+                                            <div style={{ fontSize: '1.2rem', fontWeight: '600', color: 'var(--text-primary)' }}>
+                                                {match.home_club_name}
+                                            </div>
+                                        </div>
+
+                                        <div style={{ padding: '0 2rem' }}>
+                                            <div style={{
+                                                fontSize: '2rem',
+                                                fontWeight: '800',
+                                                color: 'var(--accent-green)',
+                                                display: 'flex',
+                                                gap: '1rem'
+                                            }}>
+                                                <span>{match.home_score}</span>
+                                                <span style={{ color: 'var(--text-muted)' }}>-</span>
+                                                <span>{match.away_score}</span>
+                                            </div>
+                                        </div>
+
+                                        <div style={{ flex: 1, textAlign: 'center' }}>
+                                            <div style={{ fontSize: '1.2rem', fontWeight: '600', color: 'var(--text-primary)' }}>
+                                                {match.away_club_name}
+                                            </div>
                                         </div>
                                     </div>
-                                    {user && user.role === 'ADMIN' && (
-                                        <button
-                                            onClick={() => {
-                                                setSelectedMatch(match);
-                                                fetchMatchPlayers(match.home_club_id, match.away_club_id);
-                                                setShowEventModal(true);
-                                                setEventData({
-                                                    event_type: 'GOAL',
-                                                    player_id: '',
-                                                    club_id: match.home_club_id,
-                                                    minute: '',
-                                                    extra_time: 0
-                                                });
-                                            }}
-                                            className="btn btn-primary"
-                                            style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
-                                        >
-                                            Log Event
-                                        </button>
+
+                                    {match.venue && (
+                                        <div style={{
+                                            fontSize: '0.9rem',
+                                            color: 'var(--text-secondary)',
+                                            textAlign: 'center',
+                                            borderTop: '1px solid var(--border-color)',
+                                            paddingTop: '1rem'
+                                        }}>
+                                            📍 {match.venue}
+                                        </div>
                                     )}
                                 </div>
-
-                                <div style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    padding: '1.5rem 0'
-                                }}>
-                                    <div style={{ flex: 1, textAlign: 'center' }}>
-                                        <div style={{ fontSize: '1.2rem', fontWeight: '600', color: 'var(--text-primary)' }}>
-                                            {match.home_club_name}
-                                        </div>
-                                    </div>
-
-                                    <div style={{ padding: '0 2rem' }}>
-                                        <div style={{
-                                            fontSize: '2rem',
-                                            fontWeight: '800',
-                                            color: 'var(--accent-green)',
-                                            display: 'flex',
-                                            gap: '1rem'
-                                        }}>
-                                            <span>{match.home_score}</span>
-                                            <span style={{ color: 'var(--text-muted)' }}>-</span>
-                                            <span>{match.away_score}</span>
-                                        </div>
-                                    </div>
-
-                                    <div style={{ flex: 1, textAlign: 'center' }}>
-                                        <div style={{ fontSize: '1.2rem', fontWeight: '600', color: 'var(--text-primary)' }}>
-                                            {match.away_club_name}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {match.venue && (
-                                    <div style={{
-                                        fontSize: '0.9rem',
-                                        color: 'var(--text-secondary)',
-                                        textAlign: 'center',
-                                        borderTop: '1px solid var(--border-color)',
-                                        paddingTop: '1rem'
-                                    }}>
-                                        📍 {match.venue}
-                                    </div>
-                                )}
-                            </div>
+                            </Link>
                         ))}
                     </div>
                 )}

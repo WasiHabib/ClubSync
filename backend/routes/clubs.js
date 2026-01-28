@@ -192,4 +192,46 @@ router.put('/:id/manager', async (req, res) => {
     }
 });
 
+// POST /api/clubs/:id/trophies - Add trophy to club
+router.post('/:id/trophies',
+    [
+        body('trophy_name').notEmpty().withMessage('Trophy name is required'),
+        body('season_won').notEmpty().withMessage('Season is required'),
+        body('description').optional().isString()
+    ],
+    async (req, res) => {
+        try {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({ success: false, errors: errors.array() });
+            }
+
+            const { id } = req.params;
+            const { trophy_name, season_won, description } = req.body;
+
+            // Check if club exists
+            const [club] = await db.query('SELECT * FROM CLUB WHERE club_id = ?', [id]);
+            if (club.length === 0) {
+                return res.status(404).json({ success: false, message: 'Club not found' });
+            }
+
+            // Insert trophy
+            const [result] = await db.query(
+                `INSERT INTO TROPHY (club_id, trophy_name, season_won, description)
+                 VALUES (?, ?, ?, ?)`,
+                [id, trophy_name, season_won, description || null]
+            );
+
+            res.status(201).json({
+                success: true,
+                message: 'Trophy added successfully',
+                data: { trophy_id: result.insertId }
+            });
+        } catch (error) {
+            console.error('Error adding trophy:', error);
+            res.status(500).json({ success: false, message: 'Failed to add trophy' });
+        }
+    }
+);
+
 export default router;

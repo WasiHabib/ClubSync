@@ -4,6 +4,7 @@ import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Players from './pages/Players';
 import Matches from './pages/Matches';
+import MatchDetails from './pages/MatchDetails';
 import Clubs from './pages/Clubs';
 import ClubDetails from './pages/ClubDetails';
 import StatsCenter from './pages/StatsCenter';
@@ -52,6 +53,7 @@ function App() {
                 <Route path="/clubs" element={<Clubs user={user} />} />
                 <Route path="/clubs/:id" element={<ClubDetails user={user} />} />
                 <Route path="/matches" element={<Matches user={user} />} />
+                <Route path="/matches/:id" element={<MatchDetails />} />
                 <Route path="/stats" element={<StatsCenter />} />
                 <Route path="/admin" element={user && user.role === 'ADMIN' ? <AdminPanel /> : <Navigate to="/" />} />
             </Routes>

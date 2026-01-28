@@ -22,6 +22,13 @@ function ClubDetails({ user }) {
         specialization: 'Balanced'
     });
 
+    const [showTrophyModal, setShowTrophyModal] = useState(false);
+    const [trophyData, setTrophyData] = useState({
+        trophy_name: '',
+        season_won: '',
+        description: ''
+    });
+
     useEffect(() => {
         fetchClubDetails();
     }, [id]);
@@ -80,6 +87,21 @@ function ClubDetails({ user }) {
             }
         } catch (error) {
             alert(error.response?.data?.message || 'Failed to update manager');
+        }
+    };
+
+    const handleTrophyAdd = async (e) => {
+        e.preventDefault();
+        try {
+            const response = await api.post(`/clubs/${id}/trophies`, trophyData);
+            if (response.data.success) {
+                alert('Trophy added successfully!');
+                setShowTrophyModal(false);
+                setTrophyData({ trophy_name: '', season_won: '', description: '' });
+                fetchClubDetails();
+            }
+        } catch (error) {
+            alert(error.response?.data?.message || 'Failed to add trophy');
         }
     };
 
@@ -235,7 +257,18 @@ function ClubDetails({ user }) {
                         </div>
 
                         <div style={{ marginTop: '2rem' }}>
-                            <h3 style={{ fontSize: '1.2rem', color: 'var(--accent-primary)', marginBottom: '1rem' }}>🏆 Trophy Cabinet</h3>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                <h3 style={{ fontSize: '1.2rem', color: 'var(--accent-primary)', margin: 0 }}>🏆 Trophy Cabinet</h3>
+                                {user && user.role === 'ADMIN' && (
+                                    <button
+                                        onClick={() => setShowTrophyModal(true)}
+                                        className="btn btn-success"
+                                        style={{ padding: '0.3rem 0.8rem', fontSize: '0.8rem' }}
+                                    >
+                                        + Add Trophy
+                                    </button>
+                                )}
+                            </div>
                             {club.trophies && club.trophies.length > 0 ? (
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                                     {club.trophies.map(trophy => (
@@ -346,6 +379,54 @@ function ClubDetails({ user }) {
                                 <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
                                     <button type="button" onClick={() => setShowManagerModal(false)} className="btn btn-secondary" style={{ flex: 1 }}>Cancel</button>
                                     <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Save Changes</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
+                {showTrophyModal && (
+                    <div className="modal-overlay">
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <h2>Add Trophy</h2>
+                                <button className="close-btn" onClick={() => setShowTrophyModal(false)}>&times;</button>
+                            </div>
+                            <form onSubmit={handleTrophyAdd}>
+                                <div className="form-group">
+                                    <label>Trophy Name</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        value={trophyData.trophy_name}
+                                        onChange={(e) => setTrophyData({ ...trophyData, trophy_name: e.target.value })}
+                                        placeholder="e.g., Bangladesh Premier League"
+                                        required
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Season Won</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        value={trophyData.season_won}
+                                        onChange={(e) => setTrophyData({ ...trophyData, season_won: e.target.value })}
+                                        placeholder="e.g., 2023-24 or 2024"
+                                        required
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Description (Optional)</label>
+                                    <textarea
+                                        className="form-control"
+                                        value={trophyData.description}
+                                        onChange={(e) => setTrophyData({ ...trophyData, description: e.target.value })}
+                                        placeholder="Additional details about this trophy"
+                                        rows="3"
+                                    />
+                                </div>
+                                <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                                    <button type="button" onClick={() => setShowTrophyModal(false)} className="btn btn-secondary" style={{ flex: 1 }}>Cancel</button>
+                                    <button type="submit" className="btn btn-success" style={{ flex: 1 }}>Add Trophy</button>
                                 </div>
                             </form>
                         </div>
