@@ -10,6 +10,7 @@ import ClubDetails from './pages/ClubDetails';
 import StatsCenter from './pages/StatsCenter';
 import AdminPanel from './pages/AdminPanel';
 import Login from './pages/Login';
+import PlayerSearch from './pages/PlayerSearch';
 
 function App() {
     const [user, setUser] = useState(null);
@@ -50,6 +51,7 @@ function App() {
                 <Route path="/login" element={user ? <Navigate to="/" /> : <Login onLogin={handleLogin} />} />
                 <Route path="/" element={<Home user={user} />} />
                 <Route path="/players" element={<Players user={user} />} />
+                <Route path="/search" element={<PlayerSearch />} />
                 <Route path="/clubs" element={<Clubs user={user} />} />
                 <Route path="/clubs/:id" element={<ClubDetails user={user} />} />
                 <Route path="/matches" element={<Matches user={user} />} />

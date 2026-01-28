@@ -246,4 +246,95 @@ router.post('/seasons',
     }
 );
 
+// POST /api/matches/schedule - Create round-robin match schedule for a season
+router.post('/schedule',
+    [
+        body('season_id').isInt().withMessage('Valid season ID is required'),
+        body('start_date').isDate().withMessage('Valid start date is required'),
+        body('end_date').isDate().withMessage('Valid end date is required'),
+        body('venue').optional().isString()
+    ],
+    async (req, res) => {
+        const connection = await db.getConnection();
+
+        try {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({ success: false, errors: errors.array() });
+            }
+
+            const { season_id, start_date, end_date, venue = 'Bangabandhu National Stadium' } = req.body;
+
+            await connection.beginTransaction();
+
+            // Get all clubs
+            const [clubs] = await connection.query('SELECT club_id, club_name FROM CLUB ORDER BY club_id');
+
+            if (clubs.length < 2) {
+                await connection.rollback();
+                return res.status(400).json({ success: false, message: 'At least 2 clubs required for scheduling' });
+            }
+
+            // Calculate date distribution
+            const start = new Date(start_date);
+            const end = new Date(end_date);
+            const totalMatches = clubs.length * (clubs.length - 1); // Each team plays all others twice
+            const daysBetweenMatches = Math.floor((end - start) / (1000 * 60 * 60 * 24) / totalMatches);
+
+            let matchCount = 0;
+            let currentDate = new Date(start);
+            const createdMatches = [];
+
+            // Generate round-robin: each team plays each other twice (home and away)
+            for (let i = 0; i < clubs.length; i++) {
+                for (let j = 0; j < clubs.length; j++) {
+                    if (i === j) continue;
+
+                    const homeClub = clubs[i];
+                    const awayClub = clubs[j];
+
+                    // Create match
+                    const [result] = await connection.query(
+                        `INSERT INTO MATCH_TABLE 
+                         (season_id, home_club_id, away_club_id, match_date, venue, match_status)
+                         VALUES (?, ?, ?, ?, ?, 'SCHEDULED')`,
+                        [season_id, homeClub.club_id, awayClub.club_id, currentDate.toISOString().split('T')[0], venue]
+                    );
+
+                    createdMatches.push({
+                        match_id: result.insertId,
+                        home_team: homeClub.club_name,
+                        away_team: awayClub.club_name,
+                        date: currentDate.toISOString().split('T')[0]
+                    });
+
+                    matchCount++;
+
+                    // Increment date for next match
+                    currentDate.setDate(currentDate.getDate() + Math.max(1, daysBetweenMatches));
+                }
+            }
+
+            await connection.commit();
+
+            res.status(201).json({
+                success: true,
+                message: `Created ${matchCount} matches for the season`,
+                data: {
+                    total_matches: matchCount,
+                    season_id,
+                    matches: createdMatches.slice(0, 10), // Return first 10 as preview
+                    total_returned: Math.min(10, createdMatches.length)
+                }
+            });
+        } catch (error) {
+            await connection.rollback();
+            console.error('Error creating match schedule:', error);
+            res.status(500).json({ success: false, message: 'Failed to create match schedule' });
+        } finally {
+            connection.release();
+        }
+    }
+);
+
 export default router;

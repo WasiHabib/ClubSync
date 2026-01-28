@@ -72,6 +72,20 @@ function Navbar({ user, onLogout }) {
                             Players
                         </Link>
                         <Link
+                            to="/search"
+                            style={{
+                                color: isActive('/search') ? 'var(--status-success)' : 'var(--text-secondary)',
+                                fontWeight: isActive('/search') ? 700 : 400,
+                                textDecoration: 'none',
+                                transition: 'color 0.3s ease',
+                                textTransform: 'uppercase',
+                                fontSize: '0.9rem',
+                                letterSpacing: '0.05em'
+                            }}
+                        >
+                            Search
+                        </Link>
+                        <Link
                             to="/matches"
                             style={{
                                 color: isActive('/matches') ? 'var(--status-success)' : 'var(--text-secondary)',

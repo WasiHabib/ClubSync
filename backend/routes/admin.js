@@ -229,4 +229,30 @@ router.get('/stats', async (req, res) => {
     }
 });
 
+// GET /api/admin/transfer-history - Get all transfers
+router.get('/transfer-history', async (req, res) => {
+    try {
+        const [transfers] = await db.query(`
+      SELECT 
+        t.*,
+        p.player_name,
+        fc.club_name as from_club_name,
+        tc.club_name as to_club_name
+      FROM TRANSFER_HISTORY t
+      JOIN PLAYER p ON t.player_id = p.player_id
+      LEFT JOIN CLUB fc ON t.from_club_id = fc.club_id
+      JOIN CLUB tc ON t.to_club_id = tc.club_id
+      ORDER BY t.transfer_date DESC, t.created_at DESC
+    `);
+
+        res.json({
+            success: true,
+            data: transfers
+        });
+    } catch (error) {
+        console.error('Error fetching transfer history:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch transfer history' });
+    }
+});
+
 export default router;

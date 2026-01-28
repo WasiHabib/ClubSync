@@ -348,4 +348,282 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
+// GET /api/players/:id/stats/:seasonId - Get player stats for a specific season
+router.get('/:id/stats/:seasonId', async (req, res) => {
+    try {
+        const { id, seasonId } = req.params;
+
+        // Get player basic info
+        const [players] = await db.query(
+            'SELECT player_id, player_name, position FROM PLAYER WHERE player_id = ?',
+            [id]
+        );
+
+        if (players.length === 0) {
+            return res.status(404).json({ success: false, message: 'Player not found' });
+        }
+
+        // Get season stats
+        const [stats] = await db.query(`
+            SELECT 
+                COUNT(DISTINCT m.match_id) as matches_played,
+                COUNT(CASE WHEN e.event_type IN ('GOAL', 'PENALTY') THEN 1 END) as goals,
+                COUNT(CASE WHEN e.event_type = 'ASSIST' THEN 1 END) as assists,
+                COUNT(CASE WHEN e.event_type = 'YELLOW_CARD' THEN 1 END) as yellow_cards,
+                COUNT(CASE WHEN e.event_type = 'RED_CARD' THEN 1 END) as red_cards
+            FROM EVENTS e
+            JOIN MATCH_TABLE m ON e.match_id = m.match_id
+            WHERE e.player_id = ? AND m.season_id = ? AND m.match_status = 'COMPLETED'
+        `, [id, seasonId]);
+
+        res.json({
+            success: true,
+            data: {
+                ...players[0],
+                season_id: parseInt(seasonId),
+                stats: stats[0]
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching player stats:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch player stats' });
+    }
+});
+
+// POST /api/players/search-by-attributes - Search players by JSON attributes
+router.post('/search-by-attributes', async (req, res) => {
+    try {
+        const { minPace, maxPace, minShooting, maxShooting, minPassing, maxPassing,
+            minDribbling, maxDribbling, minDefending, maxDefending, minPhysical, maxPhysical,
+            position, nationality, club_id } = req.body;
+
+        let query = `
+            SELECT 
+                p.*,
+                c.club_name,
+                c.city as club_city
+            FROM PLAYER p
+            LEFT JOIN CLUB c ON p.current_club_id = c.club_id
+            WHERE p.is_active = TRUE
+        `;
+        const params = [];
+
+        // Position filter
+        if (position) {
+            query += ' AND p.position = ?';
+            params.push(position);
+        }
+
+        // Nationality filter
+        if (nationality) {
+            query += ' AND p.nationality LIKE ?';
+            params.push(`%${nationality}%`);
+        }
+
+        // Club filter
+        if (club_id) {
+            query += ' AND p.current_club_id = ?';
+            params.push(club_id);
+        }
+
+        // Attribute filters (using JSON functions)
+        if (minPace !== undefined || maxPace !== undefined) {
+            if (minPace !== undefined) {
+                query += ' AND JSON_EXTRACT(p.attributes, "$.pace") >= ?';
+                params.push(minPace);
+            }
+            if (maxPace !== undefined) {
+                query += ' AND JSON_EXTRACT(p.attributes, "$.pace") <= ?';
+                params.push(maxPace);
+            }
+        }
+
+        if (minShooting !== undefined || maxShooting !== undefined) {
+            if (minShooting !== undefined) {
+                query += ' AND JSON_EXTRACT(p.attributes, "$.shooting") >= ?';
+                params.push(minShooting);
+            }
+            if (maxShooting !== undefined) {
+                query += ' AND JSON_EXTRACT(p.attributes, "$.shooting") <= ?';
+                params.push(maxShooting);
+            }
+        }
+
+        if (minPassing !== undefined || maxPassing !== undefined) {
+            if (minPassing !== undefined) {
+                query += ' AND JSON_EXTRACT(p.attributes, "$.passing") >= ?';
+                params.push(minPassing);
+            }
+            if (maxPassing !== undefined) {
+                query += ' AND JSON_EXTRACT(p.attributes, "$.passing") <= ?';
+                params.push(maxPassing);
+            }
+        }
+
+        if (minDribbling !== undefined || maxDribbling !== undefined) {
+            if (minDribbling !== undefined) {
+                query += ' AND JSON_EXTRACT(p.attributes, "$.dribbling") >= ?';
+                params.push(minDribbling);
+            }
+            if (maxDribbling !== undefined) {
+                query += ' AND JSON_EXTRACT(p.attributes, "$.dribbling") <= ?';
+                params.push(maxDribbling);
+            }
+        }
+
+        if (minDefending !== undefined || maxDefending !== undefined) {
+            if (minDefending !== undefined) {
+                query += ' AND JSON_EXTRACT(p.attributes, "$.defending") >= ?';
+                params.push(minDefending);
+            }
+            if (maxDefending !== undefined) {
+                query += ' AND JSON_EXTRACT(p.attributes, "$.defending") <= ?';
+                params.push(maxDefending);
+            }
+        }
+
+        if (minPhysical !== undefined || maxPhysical !== undefined) {
+            if (minPhysical !== undefined) {
+                query += ' AND JSON_EXTRACT(p.attributes, "$.physical") >= ?';
+                params.push(minPhysical);
+            }
+            if (maxPhysical !== undefined) {
+                query += ' AND JSON_EXTRACT(p.attributes, "$.physical") <= ?';
+                params.push(maxPhysical);
+            }
+        }
+
+        query += ' ORDER BY p.player_name LIMIT 100';
+
+        const [players] = await db.query(query, params);
+
+        // Parse JSON attributes
+        const playersWithParsedAttrs = players.map(player => ({
+            ...player,
+            attributes: typeof player.attributes === 'string' ? JSON.parse(player.attributes) : player.attributes
+        }));
+
+        res.json({
+            success: true,
+            count: players.length,
+            data: playersWithParsedAttrs
+        });
+    } catch (error) {
+        console.error('Error searching players by attributes:', error);
+        res.status(500).json({ success: false, message: 'Failed to search players' });
+    }
+});
+
+// POST /api/players/:id/transfer - Transfer player to another club
+router.post('/:id/transfer',
+    [
+        body('to_club_id').isInt().withMessage('Valid destination club ID is required'),
+        body('transfer_fee').optional().isNumeric(),
+        body('new_contract').isObject().withMessage('New contract details required'),
+        body('new_contract.start_date').isDate(),
+        body('new_contract.end_date').isDate(),
+        body('new_contract.salary_amount').isNumeric()
+    ],
+    async (req, res) => {
+        const connection = await db.getConnection();
+
+        try {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({ success: false, errors: errors.array() });
+            }
+
+            const { id } = req.params;
+            const { to_club_id, transfer_fee = 0, new_contract } = req.body;
+
+            await connection.beginTransaction();
+
+            // Get current player details
+            const [players] = await connection.query(
+                'SELECT player_name, current_club_id FROM PLAYER WHERE player_id = ? AND is_active = TRUE',
+                [id]
+            );
+
+            if (players.length === 0) {
+                await connection.rollback();
+                return res.status(404).json({ success: false, message: 'Player not found' });
+            }
+
+            const player = players[0];
+            const from_club_id = player.current_club_id;
+
+            // Validate different clubs
+            if (from_club_id === to_club_id) {
+                await connection.rollback();
+                return res.status(400).json({ success: false, message: 'Player is already at this club' });
+            }
+
+            // End current contract if exists
+            if (from_club_id) {
+                await connection.query(
+                    `UPDATE CONTRACTS 
+                     SET is_active = FALSE, end_date = CURDATE() 
+                     WHERE player_id = ? AND club_id = ? AND is_active = TRUE`,
+                    [id, from_club_id]
+                );
+            }
+
+            // Update player's club
+            await connection.query(
+                'UPDATE PLAYER SET current_club_id = ? WHERE player_id = ?',
+                [to_club_id, id]
+            );
+
+            // 4. Create new contract
+            const [contractResult] = await connection.query(
+                `INSERT INTO CONTRACTS
+                 (contract_type, player_id, club_id, start_date, end_date, salary_amount, salary_currency, contract_terms, is_active)
+                 VALUES ('PLAYER', ?, ?, ?, ?, ?, ?, ?, TRUE)`,
+                [
+                    id,
+                    to_club_id,
+                    new_contract.start_date,
+                    new_contract.end_date,
+                    new_contract.salary_amount,
+                    new_contract.salary_currency || 'BDT',
+                    JSON.stringify({ transfer_fee: transfer_fee })
+                ]
+            );
+
+            // 5. Record in Transfer History
+            await connection.query(
+                `INSERT INTO TRANSFER_HISTORY
+                 (player_id, from_club_id, to_club_id, transfer_fee, transfer_date, contract_id)
+                 VALUES (?, ?, ?, ?, CURDATE(), ?)`,
+                [id, currentPlayer.current_club_id || null, to_club_id, transfer_fee, contractResult.insertId]
+            );
+
+            await connection.commit();
+
+            // Get club names for response
+            const [fromClub] = from_club_id ?
+                await db.query('SELECT club_name FROM CLUB WHERE club_id = ?', [from_club_id]) :
+                [[{ club_name: 'Free Agent' }]];
+            const [toClub] = await db.query('SELECT club_name FROM CLUB WHERE club_id = ?', [to_club_id]);
+
+            res.json({
+                success: true,
+                message: `${player.player_name} transferred from ${fromClub[0].club_name} to ${toClub[0].club_name}`,
+                data: {
+                    player_id: id,
+                    from_club: fromClub[0].club_name,
+                    to_club: toClub[0].club_name,
+                    transfer_fee
+                }
+            });
+        } catch (error) {
+            await connection.rollback();
+            console.error('Error transferring player:', error);
+            res.status(500).json({ success: false, message: 'Failed to transfer player' });
+        } finally {
+            connection.release();
+        }
+    }
+);
+
 export default router;

@@ -11,6 +11,14 @@ function StatsCenter() {
     const [leagueTable, setLeagueTable] = useState([]);
     const [topScorers, setTopScorers] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [newSeason, setNewSeason] = useState({
+        season_name: '',
+        start_date: '',
+        end_date: '',
+        description: '',
+        is_active: false
+    });
 
     useEffect(() => {
         fetchSeasons();
@@ -56,6 +64,21 @@ function StatsCenter() {
             }
         } catch (error) {
             console.error('Error fetching top scorers:', error);
+        }
+    };
+
+    const handleCreateSeason = async (e) => {
+        e.preventDefault();
+        try {
+            const response = await api.post('/matches/seasons', newSeason);
+            if (response.data.success) {
+                alert('Tournament created successfully!');
+                setShowCreateModal(false);
+                setNewSeason({ season_name: '', start_date: '', end_date: '', description: '', is_active: false });
+                fetchSeasons(); // Refresh list
+            }
+        } catch (error) {
+            alert(error.response?.data?.message || 'Failed to create tournament');
         }
     };
 
@@ -108,23 +131,107 @@ function StatsCenter() {
     return (
         <div className="container" style={{ padding: '3rem var(--spacing-lg)' }}>
             <div className="fade-in">
-                <h1>📊 Stats Center</h1>
-                <p style={{ marginBottom: '2rem' }}>Live league tables and player statistics</p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                    <div>
+                        <h1>📊 Stats Center</h1>
+                        <p style={{ margin: 0 }}>Live league tables and player statistics</p>
+                    </div>
+                </div>
 
-                {seasons.length > 0 && (
-                    <div style={{ marginBottom: '2rem' }}>
-                        <label>Select Season</label>
-                        <select
-                            value={selectedSeason}
-                            onChange={(e) => setSelectedSeason(e.target.value)}
-                            style={{ maxWidth: '300px' }}
-                        >
-                            {seasons.map(season => (
-                                <option key={season.season_id} value={season.season_id}>
-                                    {season.season_name}
-                                </option>
-                            ))}
-                        </select>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem', alignItems: 'center', justifyContent: 'space-between' }}>
+                    {seasons.length > 0 && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <label style={{ fontWeight: '600' }}>Select Season:</label>
+                            <select
+                                className="form-control"
+                                value={selectedSeason}
+                                onChange={(e) => setSelectedSeason(e.target.value)}
+                                style={{ width: '250px' }}
+                            >
+                                {seasons.map(season => (
+                                    <option key={season.season_id} value={season.season_id}>
+                                        {season.season_name} ({new Date(season.start_date).getFullYear()})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
+                    <button
+                        onClick={() => setShowCreateModal(true)}
+                        className="btn btn-primary"
+                        style={{ padding: '0.6rem 1.2rem' }}
+                    >
+                        + Create New Tournament
+                    </button>
+                </div>
+
+                {showCreateModal && (
+                    <div className="modal-overlay">
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <h2>Create New Tournament</h2>
+                                <button className="close-btn" onClick={() => setShowCreateModal(false)}>&times;</button>
+                            </div>
+                            <form onSubmit={handleCreateSeason}>
+                                <div className="form-group">
+                                    <label>Tournament Name</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        value={newSeason.season_name}
+                                        onChange={(e) => setNewSeason({ ...newSeason, season_name: e.target.value })}
+                                        placeholder="e.g. Bangladesh Premier League 2025"
+                                        required
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Start Date</label>
+                                    <input
+                                        type="date"
+                                        className="form-control"
+                                        value={newSeason.start_date}
+                                        onChange={(e) => setNewSeason({ ...newSeason, start_date: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>End Date</label>
+                                    <input
+                                        type="date"
+                                        className="form-control"
+                                        value={newSeason.end_date}
+                                        onChange={(e) => setNewSeason({ ...newSeason, end_date: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Description</label>
+                                    <textarea
+                                        className="form-control"
+                                        value={newSeason.description}
+                                        onChange={(e) => setNewSeason({ ...newSeason, description: e.target.value })}
+                                        placeholder="Optional description"
+                                        rows="2"
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>
+                                        <input
+                                            type="checkbox"
+                                            checked={newSeason.is_active}
+                                            onChange={(e) => setNewSeason({ ...newSeason, is_active: e.target.checked })}
+                                            style={{ marginRight: '0.5rem' }}
+                                        />
+                                        Set as Active Season
+                                    </label>
+                                </div>
+                                <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                                    <button type="button" onClick={() => setShowCreateModal(false)} className="btn btn-secondary" style={{ flex: 1 }}>Cancel</button>
+                                    <button type="submit" className="btn btn-success" style={{ flex: 1 }}>Create Tournament</button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 )}
 

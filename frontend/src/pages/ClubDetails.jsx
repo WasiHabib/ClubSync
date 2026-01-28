@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../api';
+import ManagerHistory from '../components/ManagerHistory';
 
 function ClubDetails({ user }) {
     const { id } = useParams();
@@ -336,6 +337,15 @@ function ClubDetails({ user }) {
                         </div>
                     </div>
                 </div>
+
+                {/* Manager History Section */}
+                <div className="card" style={{ marginTop: '2rem' }}>
+                    <h2 style={{ fontSize: '1.5rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem' }}>
+                        👔 Manager History
+                    </h2>
+                    <ManagerHistory clubId={id} />
+                </div>
+
                 {showManagerModal && (
                     <div className="modal-overlay">
                         <div className="modal-content">

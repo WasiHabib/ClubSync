@@ -1,11 +1,13 @@
+
 import { useState, useEffect } from 'react';
 import api from '../api';
+import TransferPlayer from '../components/TransferPlayer';
 
 function AdminPanel() {
-    const [activeTab, setActiveTab] = useState('users');
+    const [activeTab, setActiveTab] = useState('transfer');
     const [users, setUsers] = useState([]);
     const [auditLogs, setAuditLogs] = useState([]);
-    const [stats, setStats] = useState(null);
+    const [transferHistory, setTransferHistory] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -26,9 +28,10 @@ function AdminPanel() {
                     setAuditLogs(response.data.data);
                 }
             } else if (activeTab === 'stats') {
-                const response = await api.get('/admin/stats');
+                // Fetch transfer history for statistics
+                const response = await api.get('/admin/transfer-history');
                 if (response.data.success) {
-                    setStats(response.data.data);
+                    setTransferHistory(response.data.data);
                 }
             }
         } catch (error) {
@@ -40,7 +43,7 @@ function AdminPanel() {
 
     const toggleUserStatus = async (userId, currentStatus) => {
         try {
-            await api.put(`/admin/users/${userId}`, { is_active: !currentStatus });
+            await api.put(`/ admin / users / ${userId} `, { is_active: !currentStatus });
             alert('User status updated!');
             fetchData();
         } catch (error) {
@@ -52,7 +55,7 @@ function AdminPanel() {
         <div className="container" style={{ padding: '3rem var(--spacing-lg)' }}>
             <div className="fade-in">
                 <h1>🔐 Admin Panel</h1>
-                <p style={{ marginBottom: '2rem' }}>System administration and monitoring</p>
+                <p style={{ marginBottom: '2rem' }}>System administration and management</p>
 
                 <div style={{
                     display: 'flex',
@@ -60,6 +63,36 @@ function AdminPanel() {
                     marginBottom: '2rem',
                     borderBottom: '2px solid var(--border-color)'
                 }}>
+                    <button
+                        onClick={() => setActiveTab('transfer')}
+                        style={{
+                            padding: '0.75rem 1.5rem',
+                            background: activeTab === 'transfer' ? 'var(--accent-green)' : 'transparent',
+                            color: activeTab === 'transfer' ? 'var(--bg-primary)' : 'var(--text-secondary)',
+                            border: 'none',
+                            borderBottom: activeTab === 'transfer' ? '3px solid var(--accent-green)' : '3px solid transparent',
+                            cursor: 'pointer',
+                            fontWeight: '600',
+                            transition: 'all var(--transition-base)'
+                        }}
+                    >
+                        Transfers & Market
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('stats')}
+                        style={{
+                            padding: '0.75rem 1.5rem',
+                            background: activeTab === 'stats' ? 'var(--accent-green)' : 'transparent',
+                            color: activeTab === 'stats' ? 'var(--bg-primary)' : 'var(--text-secondary)',
+                            border: 'none',
+                            borderBottom: activeTab === 'stats' ? '3px solid var(--accent-green)' : '3px solid transparent',
+                            cursor: 'pointer',
+                            fontWeight: '600',
+                            transition: 'all var(--transition-base)'
+                        }}
+                    >
+                        Statistics & History
+                    </button>
                     <button
                         onClick={() => setActiveTab('users')}
                         style={{
@@ -88,31 +121,54 @@ function AdminPanel() {
                             transition: 'all var(--transition-base)'
                         }}
                     >
-                        Audit Logs
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('stats')}
-                        style={{
-                            padding: '0.75rem 1.5rem',
-                            background: activeTab === 'stats' ? 'var(--accent-green)' : 'transparent',
-                            color: activeTab === 'stats' ? 'var(--bg-primary)' : 'var(--text-secondary)',
-                            border: 'none',
-                            borderBottom: activeTab === 'stats' ? '3px solid var(--accent-green)' : '3px solid transparent',
-                            cursor: 'pointer',
-                            fontWeight: '600',
-                            transition: 'all var(--transition-base)'
-                        }}
-                    >
-                        Statistics
+                        System Logs
                     </button>
                 </div>
 
-                {loading ? (
+                {loading && activeTab !== 'transfer' ? (
                     <div style={{ textAlign: 'center', padding: '3rem' }}>
                         <div className="spinner" style={{ margin: '0 auto' }}></div>
                     </div>
                 ) : (
                     <>
+                        {activeTab === 'transfer' && <TransferPlayer />}
+
+                        {activeTab === 'stats' && (
+                            <div className="card">
+                                <h2 style={{ marginBottom: '1.5rem' }}>📜 Player Transfer History</h2>
+                                {transferHistory.length === 0 ? (
+                                    <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>No transfers recorded yet.</p>
+                                ) : (
+                                    <div style={{ overflowX: 'auto' }}>
+                                        <table>
+                                            <thead>
+                                                <tr>
+                                                    <th>Date</th>
+                                                    <th>Player</th>
+                                                    <th>From</th>
+                                                    <th>To</th>
+                                                    <th>Fee (BDT)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {transferHistory.map(transfer => (
+                                                    <tr key={transfer.transfer_id}>
+                                                        <td>{new Date(transfer.transfer_date).toLocaleDateString()}</td>
+                                                        <td style={{ fontWeight: '600' }}>{transfer.player_name}</td>
+                                                        <td style={{ color: 'var(--text-muted)' }}>{transfer.from_club_name || 'Free Agent'}</td>
+                                                        <td style={{ color: 'var(--accent-green)', fontWeight: '500' }}>{transfer.to_club_name}</td>
+                                                        <td style={{ fontWeight: '600' }}>
+                                                            {parseFloat(transfer.transfer_fee).toLocaleString()}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                         {activeTab === 'users' && (
                             <div className="card">
                                 <h2 style={{ marginBottom: '1.5rem' }}>User Management</h2>
@@ -139,12 +195,12 @@ function AdminPanel() {
                                                         <span className={`badge ${user.role === 'ADMIN' ? 'badge-danger' :
                                                                 user.role === 'EDITOR' ? 'badge-warning' :
                                                                     'badge-info'
-                                                            }`}>
+                                                            } `}>
                                                             {user.role}
                                                         </span>
                                                     </td>
                                                     <td>
-                                                        <span className={`badge ${user.is_active ? 'badge-success' : 'badge-danger'}`}>
+                                                        <span className={`badge ${user.is_active ? 'badge-success' : 'badge-danger'} `}>
                                                             {user.is_active ? 'Active' : 'Inactive'}
                                                         </span>
                                                     </td>
@@ -154,7 +210,7 @@ function AdminPanel() {
                                                     <td>
                                                         <button
                                                             onClick={() => toggleUserStatus(user.user_id, user.is_active)}
-                                                            className={`btn ${user.is_active ? 'btn-danger' : 'btn-success'}`}
+                                                            className={`btn ${user.is_active ? 'btn-danger' : 'btn-success'} `}
                                                             style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
                                                         >
                                                             {user.is_active ? 'Deactivate' : 'Activate'}
@@ -191,7 +247,7 @@ function AdminPanel() {
                                                         <span className={`badge ${log.action === 'INSERT' ? 'badge-success' :
                                                                 log.action === 'UPDATE' ? 'badge-warning' :
                                                                     'badge-danger'
-                                                            }`}>
+                                                            } `}>
                                                             {log.action}
                                                         </span>
                                                     </td>
@@ -201,41 +257,6 @@ function AdminPanel() {
                                             ))}
                                         </tbody>
                                     </table>
-                                </div>
-                            </div>
-                        )}
-
-                        {activeTab === 'stats' && stats && (
-                            <div className="grid grid-3">
-                                <div className="card" style={{ textAlign: 'center' }}>
-                                    <div style={{ fontSize: '2.5rem', fontWeight: '800', color: 'var(--accent-green)', marginBottom: '0.5rem' }}>
-                                        {stats.total_players}
-                                    </div>
-                                    <h3 style={{ fontSize: '1.1rem', margin: 0 }}>Total Players</h3>
-                                </div>
-                                <div className="card" style={{ textAlign: 'center' }}>
-                                    <div style={{ fontSize: '2.5rem', fontWeight: '800', color: 'var(--accent-blue)', marginBottom: '0.5rem' }}>
-                                        {stats.total_clubs}
-                                    </div>
-                                    <h3 style={{ fontSize: '1.1rem', margin: 0 }}>Total Clubs</h3>
-                                </div>
-                                <div className="card" style={{ textAlign: 'center' }}>
-                                    <div style={{ fontSize: '2.5rem', fontWeight: '800', color: 'var(--accent-orange)', marginBottom: '0.5rem' }}>
-                                        {stats.total_matches}
-                                    </div>
-                                    <h3 style={{ fontSize: '1.1rem', margin: 0 }}>Total Matches</h3>
-                                </div>
-                                <div className="card" style={{ textAlign: 'center' }}>
-                                    <div style={{ fontSize: '2.5rem', fontWeight: '800', color: 'var(--accent-yellow)', marginBottom: '0.5rem' }}>
-                                        {stats.total_events}
-                                    </div>
-                                    <h3 style={{ fontSize: '1.1rem', margin: 0 }}>Total Events</h3>
-                                </div>
-                                <div className="card" style={{ textAlign: 'center' }}>
-                                    <div style={{ fontSize: '2.5rem', fontWeight: '800', color: 'var(--accent-purple)', marginBottom: '0.5rem' }}>
-                                        {stats.total_users}
-                                    </div>
-                                    <h3 style={{ fontSize: '1.1rem', margin: 0 }}>Total Users</h3>
                                 </div>
                             </div>
                         )}

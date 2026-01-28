@@ -234,4 +234,80 @@ router.post('/:id/trophies',
     }
 );
 
+// GET /api/clubs/:id/manager-history - Get manager history for a club
+router.get('/:id/manager-history', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Check if club exists
+        const [club] = await db.query('SELECT club_id, club_name FROM CLUB WHERE club_id = ?', [id]);
+        if (club.length === 0) {
+            return res.status(404).json({ success: false, message: 'Club not found' });
+        }
+
+        // Get all contracts for managers at this club
+        const [managerHistory] = await db.query(`
+            SELECT 
+                m.manager_id,
+                m.manager_name,
+                m.nationality,
+                m.specialization,
+                c.contract_id,
+                c.start_date,
+                c.end_date,
+                c.salary_amount,
+                c.salary_currency,
+                c.is_active as contract_active,
+                DATEDIFF(c.end_date, c.start_date) as tenure_days
+            FROM CONTRACTS c
+            JOIN MANAGER m ON c.manager_id = m.manager_id
+            WHERE c.club_id = ? AND c.contract_type = 'MANAGER'
+            ORDER BY c.start_date DESC
+        `, [id]);
+
+        res.json({
+            success: true,
+            data: {
+                club: club[0],
+                manager_history: managerHistory
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching manager history:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch manager history' });
+    }
+});
+
+// GET /api/clubs/:id/players - Get all players for a specific club
+router.get('/:id/players', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const [players] = await db.query(`
+            SELECT 
+                p.*,
+                c.club_name
+            FROM PLAYER p
+            JOIN CLUB c ON p.current_club_id = c.club_id
+            WHERE p.current_club_id = ? AND p.is_active = TRUE
+            ORDER BY p.position, p.player_name
+        `, [id]);
+
+        // Parse JSON attributes
+        const playersWithParsedAttrs = players.map(player => ({
+            ...player,
+            attributes: typeof player.attributes === 'string' ? JSON.parse(player.attributes) : player.attributes
+        }));
+
+        res.json({
+            success: true,
+            count: players.length,
+            data: playersWithParsedAttrs
+        });
+    } catch (error) {
+        console.error('Error fetching club players:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch club players' });
+    }
+});
+
 export default router;
