@@ -45,7 +45,7 @@ function Players({ user }) {
 
     const fetchPlayers = async () => {
         try {
-            const response = await api.get('/players');
+            const response = await api.get('/players?limit=500');
             if (response.data.success) {
                 setPlayers(response.data.data);
             }

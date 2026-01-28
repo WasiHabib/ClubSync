@@ -595,7 +595,7 @@ router.post('/:id/transfer',
                 `INSERT INTO TRANSFER_HISTORY
                  (player_id, from_club_id, to_club_id, transfer_fee, transfer_date, contract_id)
                  VALUES (?, ?, ?, ?, CURDATE(), ?)`,
-                [id, currentPlayer.current_club_id || null, to_club_id, transfer_fee, contractResult.insertId]
+                [id, player.current_club_id || null, to_club_id, transfer_fee, contractResult.insertId]
             );
 
             await connection.commit();

@@ -1,6 +1,9 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
 import { db } from '../config/database.js';
+import { logAudit } from '../utils/audit.js';
+
+import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -29,8 +32,9 @@ const generateEventDescription = (eventType, playerName, relatedPlayerName, minu
 };
 
 // POST /api/events - Log new match event
-router.post('/',
+router.post('/', authenticate,
     [
+        // ... validations ...
         body('match_id').isInt().withMessage('Valid match ID is required'),
         body('event_type').isIn(['GOAL', 'ASSIST', 'YELLOW_CARD', 'RED_CARD', 'SUBSTITUTION', 'PENALTY', 'OWN_GOAL'])
             .withMessage('Invalid event type'),
@@ -61,6 +65,8 @@ router.post('/',
                 extra_time = 0,
                 event_notes
             } = req.body;
+
+            // ... (rest of logic: fetch names, generate description) ...
 
             // Get player names for description
             const [player] = await connection.query(
@@ -96,6 +102,18 @@ router.post('/',
                 [match_id, event_type, player_id, related_player_id || null, club_id, minute, extra_time, description, event_notes || null]
             );
 
+            // Log Audit
+            await logAudit(
+                req.user?.user_id,
+                'INSERT',
+                'EVENTS',
+                result.insertId,
+                null,
+                req.body,
+                connection
+            );
+
+            // ... (rest of the logic: update match score) ...
             // Update match score if it's a goal
             if (event_type === 'GOAL' || event_type === 'PENALTY') {
                 const [match] = await connection.query(
@@ -144,6 +162,7 @@ router.post('/',
                 }
             });
         } catch (error) {
+
             await connection.rollback();
             console.error('Error logging event:', error);
             res.status(500).json({ success: false, message: 'Failed to log event' });

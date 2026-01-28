@@ -1,12 +1,21 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
 import { db } from '../config/database.js';
+import { logAudit } from '../utils/audit.js';
 
 const router = express.Router();
 
 // GET /api/matches - List matches with filtering
 router.get('/', async (req, res) => {
     try {
+        // Auto-complete matches older than 100 minutes
+        await db.query(`
+            UPDATE MATCH_TABLE 
+            SET match_status = 'COMPLETED' 
+            WHERE match_status IN ('SCHEDULED', 'LIVE') 
+            AND match_date < DATE_SUB(NOW(), INTERVAL 100 MINUTE)
+        `);
+
         const { season_id, club_id, status, limit = 50, offset = 0 } = req.query;
 
         let query = `
@@ -102,8 +111,12 @@ router.get('/:id', async (req, res) => {
     }
 });
 
+import { authenticate } from '../middleware/auth.js';
+
+// ... (GET routes)
+
 // POST /api/matches - Create new match
-router.post('/',
+router.post('/', authenticate,
     [
         body('season_id').isInt().withMessage('Valid season ID is required'),
         body('home_club_id').isInt().withMessage('Valid home club ID is required'),
@@ -131,17 +144,33 @@ router.post('/',
                 return res.status(400).json({ success: false, message: 'Home and away clubs must be different' });
             }
 
+            // Determine status based on date
+            // If match date is in the past, mark as COMPLETED, else SCHEDULED
+            const isPast = new Date(match_date) < new Date();
+            const status = isPast ? 'COMPLETED' : 'SCHEDULED';
+
             const [result] = await db.query(
                 `INSERT INTO MATCH_TABLE 
-         (season_id, home_club_id, away_club_id, match_date, venue, referee_name)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-                [season_id, home_club_id, away_club_id, match_date, venue || null, referee_name || null]
+         (season_id, home_club_id, away_club_id, match_date, venue, referee_name, match_status)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                [season_id, home_club_id, away_club_id, match_date, venue || null, referee_name || null, status]
+            );
+
+            // Access user from request if available (via middleware)
+            // Assuming req.user is set by auth middleware, if not present use null
+            await logAudit(
+                req.user?.user_id,
+                'INSERT',
+                'MATCH_TABLE',
+                result.insertId,
+                null,
+                req.body
             );
 
             res.status(201).json({
                 success: true,
                 message: 'Match created successfully',
-                data: { match_id: result.insertId }
+                data: { match_id: result.insertId, status }
             });
         } catch (error) {
             console.error('Error creating match:', error);

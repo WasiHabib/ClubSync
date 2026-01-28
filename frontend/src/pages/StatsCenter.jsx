@@ -88,9 +88,10 @@ function StatsCenter() {
             {
                 label: 'Goals',
                 data: topScorers.map(s => s.goals),
-                backgroundColor: 'rgba(0, 255, 135, 0.6)',
-                borderColor: 'rgba(0, 255, 135, 1)',
-                borderWidth: 2
+                backgroundColor: 'rgba(232, 214, 255, 0.6)',
+                borderColor: 'rgba(232, 214, 255, 1)',
+                borderWidth: 2,
+                borderRadius: 4
             }
         ]
     };
@@ -110,12 +111,13 @@ function StatsCenter() {
         },
         scales: {
             y: {
+                beginAtZero: true,
                 ticks: { color: '#a0aec0' },
-                grid: { color: '#2d3748' }
+                grid: { color: 'rgba(255,255,255,0.05)' }
             },
             x: {
                 ticks: { color: '#a0aec0' },
-                grid: { color: '#2d3748' }
+                grid: { display: false }
             }
         }
     };
@@ -226,9 +228,9 @@ function StatsCenter() {
                                         Set as Active Season
                                     </label>
                                 </div>
-                                <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-                                    <button type="button" onClick={() => setShowCreateModal(false)} className="btn btn-secondary" style={{ flex: 1 }}>Cancel</button>
-                                    <button type="submit" className="btn btn-success" style={{ flex: 1 }}>Create Tournament</button>
+                                <div className="modal-footer">
+                                    <button type="button" onClick={() => setShowCreateModal(false)} className="btn btn-secondary">Cancel</button>
+                                    <button type="submit" className="btn btn-success">Create Tournament</button>
                                 </div>
                             </form>
                         </div>
@@ -258,10 +260,13 @@ function StatsCenter() {
                                     </thead>
                                     <tbody>
                                         {leagueTable.map((team, index) => (
-                                            <tr key={team.club_id} style={{
-                                                background: index < 3 ? 'rgba(0, 255, 135, 0.05)' : 'transparent'
-                                            }}>
-                                                <td style={{ fontWeight: '700', color: index < 3 ? 'var(--accent-green)' : 'inherit' }}>
+                                            <tr
+                                                key={team.club_id}
+                                                style={{
+                                                    background: index < 3 ? 'rgba(232, 214, 255, 0.05)' : 'transparent'
+                                                }}
+                                            >
+                                                <td style={{ fontWeight: '700', color: index < 3 ? 'var(--status-success)' : 'inherit' }}>
                                                     {index + 1}
                                                 </td>
                                                 <td style={{ fontWeight: '600', color: 'var(--text-primary)' }}>
@@ -271,10 +276,10 @@ function StatsCenter() {
                                                 <td>{team.wins || 0}</td>
                                                 <td>{team.draws || 0}</td>
                                                 <td>{team.losses || 0}</td>
-                                                <td style={{ color: team.goal_difference > 0 ? 'var(--accent-green)' : team.goal_difference < 0 ? 'var(--accent-red)' : 'inherit' }}>
+                                                <td style={{ color: team.goal_difference > 0 ? 'var(--status-success)' : team.goal_difference < 0 ? 'var(--status-danger)' : 'inherit' }}>
                                                     {team.goal_difference > 0 ? '+' : ''}{team.goal_difference || 0}
                                                 </td>
-                                                <td style={{ fontWeight: '700', color: 'var(--accent-green)' }}>
+                                                <td style={{ fontWeight: '700', color: 'var(--status-success)' }}>
                                                     {team.points || 0}
                                                 </td>
                                             </tr>
@@ -305,14 +310,14 @@ function StatsCenter() {
                                         <tbody>
                                             {topScorers.map((scorer, index) => (
                                                 <tr key={scorer.player_id}>
-                                                    <td style={{ fontWeight: '700', color: index === 0 ? 'var(--accent-yellow)' : 'inherit' }}>
+                                                    <td style={{ fontWeight: '700', color: index === 0 ? 'var(--status-warning)' : 'inherit' }}>
                                                         {index + 1}
                                                     </td>
                                                     <td style={{ fontWeight: '600', color: 'var(--text-primary)' }}>
                                                         {scorer.player_name}
                                                     </td>
                                                     <td>{scorer.club_name || 'Free Agent'}</td>
-                                                    <td style={{ fontWeight: '700', color: 'var(--accent-green)' }}>
+                                                    <td style={{ fontWeight: '700', color: 'var(--status-success)' }}>
                                                         {scorer.goals}
                                                     </td>
                                                 </tr>
