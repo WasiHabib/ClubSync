@@ -24,6 +24,7 @@ function Matches({ user }) {
         minute: '',
         extra_time: 0
     });
+    const [matchPlayers, setMatchPlayers] = useState([]);
 
     useEffect(() => {
         fetchMatches();
@@ -68,8 +69,6 @@ function Matches({ user }) {
             console.error('Error fetching clubs:', error);
         }
     };
-
-    const [matchPlayers, setMatchPlayers] = useState([]);
 
     const fetchMatchPlayers = async (homeClubId, awayClubId) => {
         try {
@@ -169,17 +168,14 @@ function Matches({ user }) {
                         <p style={{ fontSize: '1.2rem' }}>No matches scheduled</p>
                     </div>
                 ) : (
-                    <div className="grid" style={{ gap: '1.5rem' }}>
+                    <div className="grid" style={{ gap: '1.5rem', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
                         {matches.map(match => (
                             <Link
                                 to={`/matches/${match.match_id}`}
                                 key={match.match_id}
                                 style={{ textDecoration: 'none', color: 'inherit' }}
                             >
-                                <div className="card" style={{ cursor: 'pointer', transition: 'transform 0.2s' }}
-                                    onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-                                    onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-                                >
+                                <div className="card" style={{ cursor: 'pointer', transition: 'transform 0.2s', height: '100%' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                                         <div>
                                             <span className={`badge ${getStatusBadge(match.match_status)}`}>
@@ -192,7 +188,7 @@ function Matches({ user }) {
                                         {user && user.role === 'ADMIN' && (
                                             <button
                                                 onClick={(e) => {
-                                                    e.preventDefault(); // Prevent navigation
+                                                    e.preventDefault();
                                                     setSelectedMatch(match);
                                                     fetchMatchPlayers(match.home_club_id, match.away_club_id);
                                                     setShowEventModal(true);
@@ -214,32 +210,31 @@ function Matches({ user }) {
 
                                     <div style={{
                                         display: 'flex',
-                                        justifyContent: 'space-between',
+                                        justifyContent: 'center',
                                         alignItems: 'center',
-                                        padding: '1.5rem 0'
+                                        padding: '1.5rem 0',
+                                        gap: '1rem'
                                     }}>
-                                        <div style={{ flex: 1, textAlign: 'center' }}>
-                                            <div style={{ fontSize: '1.2rem', fontWeight: '600', color: 'var(--text-primary)' }}>
+                                        <div style={{ flex: 1, textAlign: 'right' }}>
+                                            <div style={{ fontSize: '1.1rem', fontWeight: '600', color: 'var(--text-primary)' }}>
                                                 {match.home_club_name}
                                             </div>
                                         </div>
 
-                                        <div style={{ padding: '0 2rem' }}>
+                                        <div style={{ padding: '0 0.5rem', textAlign: 'center' }}>
                                             <div style={{
-                                                fontSize: '2rem',
+                                                fontSize: '1.5rem',
                                                 fontWeight: '800',
-                                                color: 'var(--accent-green)',
-                                                display: 'flex',
-                                                gap: '1rem'
+                                                color: 'var(--status-success)',
+                                                whiteSpace: 'nowrap',
+                                                minWidth: '60px'
                                             }}>
-                                                <span>{match.home_score}</span>
-                                                <span style={{ color: 'var(--text-muted)' }}>-</span>
-                                                <span>{match.away_score}</span>
+                                                {match.home_score} - {match.away_score}
                                             </div>
                                         </div>
 
-                                        <div style={{ flex: 1, textAlign: 'center' }}>
-                                            <div style={{ fontSize: '1.2rem', fontWeight: '600', color: 'var(--text-primary)' }}>
+                                        <div style={{ flex: 1, textAlign: 'left' }}>
+                                            <div style={{ fontSize: '1.1rem', fontWeight: '600', color: 'var(--text-primary)' }}>
                                                 {match.away_club_name}
                                             </div>
                                         </div>
@@ -266,80 +261,78 @@ function Matches({ user }) {
             {/* Create Match Modal */}
             {showModal && (
                 <div className="modal-overlay" onClick={() => setShowModal(false)}>
-                    <div className="modal" onClick={(e) => e.stopPropagation()}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h2 style={{ margin: 0 }}>Create New Match</h2>
-                            <button onClick={() => setShowModal(false)} className="btn btn-secondary" style={{ padding: '0.5rem' }}>
+                            <h2>Create New Match</h2>
+                            <button className="close-btn" onClick={() => setShowModal(false)}>
                                 ✕
                             </button>
                         </div>
                         <form onSubmit={handleSubmit}>
-                            <div className="modal-body">
+                            <div className="form-group">
+                                <label>Season *</label>
+                                <select
+                                    value={formData.season_id}
+                                    onChange={(e) => setFormData({ ...formData, season_id: e.target.value })}
+                                    required
+                                >
+                                    {seasons.map(season => (
+                                        <option key={season.season_id} value={season.season_id}>
+                                            {season.season_name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="grid grid-2">
                                 <div className="form-group">
-                                    <label>Season *</label>
+                                    <label>Home Club *</label>
                                     <select
-                                        value={formData.season_id}
-                                        onChange={(e) => setFormData({ ...formData, season_id: e.target.value })}
+                                        value={formData.home_club_id}
+                                        onChange={(e) => setFormData({ ...formData, home_club_id: e.target.value })}
                                         required
                                     >
-                                        {seasons.map(season => (
-                                            <option key={season.season_id} value={season.season_id}>
-                                                {season.season_name}
+                                        <option value="">Select Club</option>
+                                        {clubs.map(club => (
+                                            <option key={club.club_id} value={club.club_id}>
+                                                {club.club_name}
                                             </option>
                                         ))}
                                     </select>
                                 </div>
-                                <div className="grid grid-2">
-                                    <div className="form-group">
-                                        <label>Home Club *</label>
-                                        <select
-                                            value={formData.home_club_id}
-                                            onChange={(e) => setFormData({ ...formData, home_club_id: e.target.value })}
-                                            required
-                                        >
-                                            <option value="">Select Club</option>
-                                            {clubs.map(club => (
-                                                <option key={club.club_id} value={club.club_id}>
-                                                    {club.club_name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className="form-group">
-                                        <label>Away Club *</label>
-                                        <select
-                                            value={formData.away_club_id}
-                                            onChange={(e) => setFormData({ ...formData, away_club_id: e.target.value })}
-                                            required
-                                        >
-                                            <option value="">Select Club</option>
-                                            {clubs.map(club => (
-                                                <option key={club.club_id} value={club.club_id}>
-                                                    {club.club_name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
+                                <div className="form-group">
+                                    <label>Away Club *</label>
+                                    <select
+                                        value={formData.away_club_id}
+                                        onChange={(e) => setFormData({ ...formData, away_club_id: e.target.value })}
+                                        required
+                                    >
+                                        <option value="">Select Club</option>
+                                        {clubs.map(club => (
+                                            <option key={club.club_id} value={club.club_id}>
+                                                {club.club_name}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
-                                <div className="grid grid-2">
-                                    <div className="form-group">
-                                        <label>Match Date & Time *</label>
-                                        <input
-                                            type="datetime-local"
-                                            value={formData.match_date}
-                                            onChange={(e) => setFormData({ ...formData, match_date: e.target.value })}
-                                            required
-                                        />
-                                    </div>
-                                    <div className="form-group">
-                                        <label>Venue</label>
-                                        <input
-                                            type="text"
-                                            value={formData.venue}
-                                            onChange={(e) => setFormData({ ...formData, venue: e.target.value })}
-                                            placeholder="Stadium name"
-                                        />
-                                    </div>
+                            </div>
+                            <div className="grid grid-2">
+                                <div className="form-group">
+                                    <label>Match Date & Time *</label>
+                                    <input
+                                        type="datetime-local"
+                                        value={formData.match_date}
+                                        onChange={(e) => setFormData({ ...formData, match_date: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Venue</label>
+                                    <input
+                                        type="text"
+                                        value={formData.venue}
+                                        onChange={(e) => setFormData({ ...formData, venue: e.target.value })}
+                                        placeholder="Stadium name"
+                                    />
                                 </div>
                             </div>
                             <div className="modal-footer">
@@ -358,90 +351,89 @@ function Matches({ user }) {
             {/* Log Event Modal */}
             {showEventModal && selectedMatch && (
                 <div className="modal-overlay" onClick={() => setShowEventModal(false)}>
-                    <div className="modal" onClick={(e) => e.stopPropagation()}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h2 style={{ margin: 0 }}>Log Match Event</h2>
-                            <button onClick={() => setShowEventModal(false)} className="btn btn-secondary" style={{ padding: '0.5rem' }}>
+                            <h2>Log Match Event</h2>
+                            <button className="close-btn" onClick={() => setShowEventModal(false)}>
                                 ✕
                             </button>
                         </div>
                         <form onSubmit={handleLogEvent}>
-                            <div className="modal-body">
-                                <div style={{ marginBottom: '1rem', padding: '0.75rem', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)' }}>
-                                    <strong>{selectedMatch.home_club_name}</strong> vs <strong>{selectedMatch.away_club_name}</strong>
-                                </div>
+                            <div style={{ marginBottom: '1rem', padding: '0.75rem', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
+                                <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>MATCH EVENT</div>
+                                <div style={{ fontSize: '1.2rem' }}><strong>{selectedMatch.home_club_name}</strong> vs <strong>{selectedMatch.away_club_name}</strong></div>
+                            </div>
+                            <div className="form-group">
+                                <label>Event Type *</label>
+                                <select
+                                    value={eventData.event_type}
+                                    onChange={(e) => setEventData({ ...eventData, event_type: e.target.value })}
+                                >
+                                    <option value="GOAL">⚽ Goal</option>
+                                    <option value="PENALTY">⚽ Penalty</option>
+                                    <option value="OWN_GOAL">Own Goal</option>
+                                    <option value="ASSIST">🎯 Assist</option>
+                                    <option value="YELLOW_CARD">🟨 Yellow Card</option>
+                                    <option value="RED_CARD">🟥 Red Card</option>
+                                    <option value="SUBSTITUTION">🔄 Substitution</option>
+                                </select>
+                            </div>
+                            <div className="form-group">
+                                <label>Club *</label>
+                                <select
+                                    value={eventData.club_id}
+                                    onChange={(e) => {
+                                        setEventData({
+                                            ...eventData,
+                                            club_id: e.target.value,
+                                            player_id: ''
+                                        });
+                                    }}
+                                    required
+                                >
+                                    <option value={selectedMatch.home_club_id}>{selectedMatch.home_club_name}</option>
+                                    <option value={selectedMatch.away_club_id}>{selectedMatch.away_club_name}</option>
+                                </select>
+                            </div>
+                            <div className="form-group">
+                                <label>Player *</label>
+                                <select
+                                    value={eventData.player_id}
+                                    onChange={(e) => setEventData({ ...eventData, player_id: e.target.value })}
+                                    required
+                                >
+                                    <option value="">Select Player</option>
+                                    {matchPlayers
+                                        .filter(p => p.current_club_id == eventData.club_id)
+                                        .map(player => (
+                                            <option key={player.player_id} value={player.player_id}>
+                                                {player.jersey_number ? `#${player.jersey_number} ` : ''}{player.player_name} ({player.position})
+                                            </option>
+                                        ))
+                                    }
+                                </select>
+                            </div>
+                            <div className="grid grid-2">
                                 <div className="form-group">
-                                    <label>Event Type *</label>
-                                    <select
-                                        value={eventData.event_type}
-                                        onChange={(e) => setEventData({ ...eventData, event_type: e.target.value })}
-                                    >
-                                        <option value="GOAL">⚽ Goal</option>
-                                        <option value="PENALTY">⚽ Penalty</option>
-                                        <option value="OWN_GOAL">Own Goal</option>
-                                        <option value="ASSIST">🎯 Assist</option>
-                                        <option value="YELLOW_CARD">🟨 Yellow Card</option>
-                                        <option value="RED_CARD">🟥 Red Card</option>
-                                        <option value="SUBSTITUTION">🔄 Substitution</option>
-                                    </select>
-                                </div>
-                                <div className="form-group">
-                                    <label>Club *</label>
-                                    <select
-                                        value={eventData.club_id}
-                                        onChange={(e) => {
-                                            setEventData({
-                                                ...eventData,
-                                                club_id: e.target.value,
-                                                player_id: '' // Reset player when club changes
-                                            });
-                                        }}
+                                    <label>Minute *</label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        max="120"
+                                        value={eventData.minute}
+                                        onChange={(e) => setEventData({ ...eventData, minute: e.target.value })}
                                         required
-                                    >
-                                        <option value={selectedMatch.home_club_id}>{selectedMatch.home_club_name}</option>
-                                        <option value={selectedMatch.away_club_id}>{selectedMatch.away_club_name}</option>
-                                    </select>
+                                    />
                                 </div>
                                 <div className="form-group">
-                                    <label>Player *</label>
-                                    <select
-                                        value={eventData.player_id}
-                                        onChange={(e) => setEventData({ ...eventData, player_id: e.target.value })}
-                                        required
-                                    >
-                                        <option value="">Select Player</option>
-                                        {matchPlayers
-                                            .filter(p => p.current_club_id == eventData.club_id)
-                                            .map(player => (
-                                                <option key={player.player_id} value={player.player_id}>
-                                                    {player.jersey_number ? `#${player.jersey_number} ` : ''}{player.player_name} ({player.position})
-                                                </option>
-                                            ))
-                                        }
-                                    </select>
-                                </div>
-                                <div className="grid grid-2">
-                                    <div className="form-group">
-                                        <label>Minute *</label>
-                                        <input
-                                            type="number"
-                                            min="1"
-                                            max="120"
-                                            value={eventData.minute}
-                                            onChange={(e) => setEventData({ ...eventData, minute: e.target.value })}
-                                            required
-                                        />
-                                    </div>
-                                    <div className="form-group">
-                                        <label>Extra Time</label>
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            max="15"
-                                            value={eventData.extra_time}
-                                            onChange={(e) => setEventData({ ...eventData, extra_time: e.target.value })}
-                                        />
-                                    </div>
+                                    <label>Extra Time</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        max="15"
+                                        value={eventData.extra_time}
+                                        onChange={(e) => setEventData({ ...eventData, extra_time: e.target.value })}
+                                    />
                                 </div>
                             </div>
                             <div className="modal-footer">

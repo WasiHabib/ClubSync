@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import api from '../api';
 import TransferPlayer from '../components/TransferPlayer';
@@ -28,7 +27,6 @@ function AdminPanel() {
                     setAuditLogs(response.data.data);
                 }
             } else if (activeTab === 'stats') {
-                // Fetch transfer history for statistics
                 const response = await api.get('/admin/transfer-history');
                 if (response.data.success) {
                     setTransferHistory(response.data.data);
@@ -43,7 +41,7 @@ function AdminPanel() {
 
     const toggleUserStatus = async (userId, currentStatus) => {
         try {
-            await api.put(`/ admin / users / ${userId} `, { is_active: !currentStatus });
+            await api.put(`/admin/users/${userId}`, { is_active: !currentStatus });
             alert('User status updated!');
             fetchData();
         } catch (error) {
@@ -54,75 +52,42 @@ function AdminPanel() {
     return (
         <div className="container" style={{ padding: '3rem var(--spacing-lg)' }}>
             <div className="fade-in">
-                <h1>🔐 Admin Panel</h1>
-                <p style={{ marginBottom: '2rem' }}>System administration and management</p>
+                <div style={{ marginBottom: '2rem' }}>
+                    <h1>🔐 Admin Panel</h1>
+                    <p style={{ color: 'var(--text-secondary)' }}>System administration and management console</p>
+                </div>
 
                 <div style={{
                     display: 'flex',
                     gap: '1rem',
                     marginBottom: '2rem',
-                    borderBottom: '2px solid var(--border-color)'
+                    borderBottom: '2px solid var(--border-color)',
+                    overflowX: 'auto',
+                    paddingBottom: '0.5rem'
                 }}>
-                    <button
-                        onClick={() => setActiveTab('transfer')}
-                        style={{
-                            padding: '0.75rem 1.5rem',
-                            background: activeTab === 'transfer' ? 'var(--accent-green)' : 'transparent',
-                            color: activeTab === 'transfer' ? 'var(--bg-primary)' : 'var(--text-secondary)',
-                            border: 'none',
-                            borderBottom: activeTab === 'transfer' ? '3px solid var(--accent-green)' : '3px solid transparent',
-                            cursor: 'pointer',
-                            fontWeight: '600',
-                            transition: 'all var(--transition-base)'
-                        }}
-                    >
-                        Transfers & Market
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('stats')}
-                        style={{
-                            padding: '0.75rem 1.5rem',
-                            background: activeTab === 'stats' ? 'var(--accent-green)' : 'transparent',
-                            color: activeTab === 'stats' ? 'var(--bg-primary)' : 'var(--text-secondary)',
-                            border: 'none',
-                            borderBottom: activeTab === 'stats' ? '3px solid var(--accent-green)' : '3px solid transparent',
-                            cursor: 'pointer',
-                            fontWeight: '600',
-                            transition: 'all var(--transition-base)'
-                        }}
-                    >
-                        Statistics & History
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('users')}
-                        style={{
-                            padding: '0.75rem 1.5rem',
-                            background: activeTab === 'users' ? 'var(--accent-green)' : 'transparent',
-                            color: activeTab === 'users' ? 'var(--bg-primary)' : 'var(--text-secondary)',
-                            border: 'none',
-                            borderBottom: activeTab === 'users' ? '3px solid var(--accent-green)' : '3px solid transparent',
-                            cursor: 'pointer',
-                            fontWeight: '600',
-                            transition: 'all var(--transition-base)'
-                        }}
-                    >
-                        Users
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('audit')}
-                        style={{
-                            padding: '0.75rem 1.5rem',
-                            background: activeTab === 'audit' ? 'var(--accent-green)' : 'transparent',
-                            color: activeTab === 'audit' ? 'var(--bg-primary)' : 'var(--text-secondary)',
-                            border: 'none',
-                            borderBottom: activeTab === 'audit' ? '3px solid var(--accent-green)' : '3px solid transparent',
-                            cursor: 'pointer',
-                            fontWeight: '600',
-                            transition: 'all var(--transition-base)'
-                        }}
-                    >
-                        System Logs
-                    </button>
+                    {['transfer', 'stats', 'users', 'audit'].map(tab => (
+                        <button
+                            key={tab}
+                            onClick={() => setActiveTab(tab)}
+                            style={{
+                                padding: '0.75rem 1.5rem',
+                                background: activeTab === tab ? 'var(--status-success)' : 'transparent',
+                                color: activeTab === tab ? '#000' : 'var(--text-secondary)',
+                                border: 'none',
+                                borderRadius: 'var(--radius-sm) var(--radius-sm) 0 0',
+                                cursor: 'pointer',
+                                fontWeight: '700',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em',
+                                transition: 'all 0.2s ease',
+                                whiteSpace: 'nowrap'
+                            }}
+                        >
+                            {tab === 'transfer' ? 'Transfers & Market' :
+                                tab === 'stats' ? 'Transfer History' :
+                                    tab === 'users' ? 'User Management' : 'System Logs'}
+                        </button>
+                    ))}
                 </div>
 
                 {loading && activeTab !== 'transfer' ? (
@@ -135,7 +100,7 @@ function AdminPanel() {
 
                         {activeTab === 'stats' && (
                             <div className="card">
-                                <h2 style={{ marginBottom: '1.5rem' }}>📜 Player Transfer History</h2>
+                                <h2 style={{ marginBottom: '1.5rem', color: 'var(--status-success)' }}>📜 Player Transfer History</h2>
                                 {transferHistory.length === 0 ? (
                                     <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>No transfers recorded yet.</p>
                                 ) : (
@@ -151,12 +116,12 @@ function AdminPanel() {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {transferHistory.map(transfer => (
+                                                {transferHistory.map((transfer, i) => (
                                                     <tr key={transfer.transfer_id}>
                                                         <td>{new Date(transfer.transfer_date).toLocaleDateString()}</td>
                                                         <td style={{ fontWeight: '600' }}>{transfer.player_name}</td>
                                                         <td style={{ color: 'var(--text-muted)' }}>{transfer.from_club_name || 'Free Agent'}</td>
-                                                        <td style={{ color: 'var(--accent-green)', fontWeight: '500' }}>{transfer.to_club_name}</td>
+                                                        <td style={{ color: 'var(--status-success)', fontWeight: '500' }}>{transfer.to_club_name}</td>
                                                         <td style={{ fontWeight: '600' }}>
                                                             {parseFloat(transfer.transfer_fee).toLocaleString()}
                                                         </td>
@@ -171,7 +136,7 @@ function AdminPanel() {
 
                         {activeTab === 'users' && (
                             <div className="card">
-                                <h2 style={{ marginBottom: '1.5rem' }}>User Management</h2>
+                                <h2 style={{ marginBottom: '1.5rem', color: 'var(--accent-cool)' }}>User Management</h2>
                                 <div style={{ overflowX: 'auto' }}>
                                     <table>
                                         <thead>
@@ -185,7 +150,7 @@ function AdminPanel() {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {users.map(user => (
+                                            {users.map((user, i) => (
                                                 <tr key={user.user_id}>
                                                     <td style={{ fontWeight: '600', color: 'var(--text-primary)' }}>
                                                         {user.username}
@@ -193,8 +158,8 @@ function AdminPanel() {
                                                     <td>{user.email}</td>
                                                     <td>
                                                         <span className={`badge ${user.role === 'ADMIN' ? 'badge-danger' :
-                                                                user.role === 'EDITOR' ? 'badge-warning' :
-                                                                    'badge-info'
+                                                            user.role === 'EDITOR' ? 'badge-warning' :
+                                                                'badge-info'
                                                             } `}>
                                                             {user.role}
                                                         </span>
@@ -226,7 +191,7 @@ function AdminPanel() {
 
                         {activeTab === 'audit' && (
                             <div className="card">
-                                <h2 style={{ marginBottom: '1.5rem' }}>Audit Trail</h2>
+                                <h2 style={{ marginBottom: '1.5rem', color: 'var(--status-warning)' }}>Audit Trail</h2>
                                 <div style={{ overflowX: 'auto' }}>
                                     <table>
                                         <thead>
@@ -239,14 +204,14 @@ function AdminPanel() {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {auditLogs.map(log => (
+                                            {auditLogs.map((log, i) => (
                                                 <tr key={log.log_id}>
                                                     <td>{new Date(log.created_at).toLocaleString()}</td>
                                                     <td>{log.username || 'System'}</td>
                                                     <td>
                                                         <span className={`badge ${log.action === 'INSERT' ? 'badge-success' :
-                                                                log.action === 'UPDATE' ? 'badge-warning' :
-                                                                    'badge-danger'
+                                                            log.action === 'UPDATE' ? 'badge-warning' :
+                                                                'badge-danger'
                                                             } `}>
                                                             {log.action}
                                                         </span>
