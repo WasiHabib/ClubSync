@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import api from '../api';
 
 function Players({ user }) {
@@ -182,9 +182,9 @@ function Players({ user }) {
                                 {filteredPlayers.map(player => (
                                     <tr key={player.player_id}>
                                         <td>
-                                            <div style={{ fontWeight: '600', color: 'var(--text-primary)' }}>
+                                            <Link to={`/players/${player.player_id}`} style={{ fontWeight: '600', color: 'var(--primary-color)', textDecoration: 'none' }}>
                                                 {player.player_name}
-                                            </div>
+                                            </Link>
                                         </td>
                                         <td>
                                             <span className={`position-badge position-${player.position}`}>

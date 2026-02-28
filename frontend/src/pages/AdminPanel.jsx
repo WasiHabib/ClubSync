@@ -7,6 +7,7 @@ function AdminPanel() {
     const [users, setUsers] = useState([]);
     const [auditLogs, setAuditLogs] = useState([]);
     const [transferHistory, setTransferHistory] = useState([]);
+    const [contracts, setContracts] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -30,6 +31,11 @@ function AdminPanel() {
                 const response = await api.get('/admin/transfer-history');
                 if (response.data.success) {
                     setTransferHistory(response.data.data);
+                }
+            } else if (activeTab === 'contracts') {
+                const response = await api.get('/admin/contracts');
+                if (response.data.success) {
+                    setContracts(response.data.data);
                 }
             }
         } catch (error) {
@@ -65,7 +71,7 @@ function AdminPanel() {
                     overflowX: 'auto',
                     paddingBottom: '0.5rem'
                 }}>
-                    {['transfer', 'stats', 'users', 'audit'].map(tab => (
+                    {['transfer', 'contracts', 'stats', 'users', 'audit'].map(tab => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
@@ -84,8 +90,9 @@ function AdminPanel() {
                             }}
                         >
                             {tab === 'transfer' ? 'Transfers & Market' :
-                                tab === 'stats' ? 'Transfer History' :
-                                    tab === 'users' ? 'User Management' : 'System Logs'}
+                                tab === 'contracts' ? 'Contracts' :
+                                    tab === 'stats' ? 'Transfer History' :
+                                        tab === 'users' ? 'User Management' : 'System Logs'}
                         </button>
                     ))}
                 </div>
@@ -97,6 +104,54 @@ function AdminPanel() {
                 ) : (
                     <>
                         {activeTab === 'transfer' && <TransferPlayer />}
+
+                        {activeTab === 'contracts' && (
+                            <div className="card">
+                                <h2 style={{ marginBottom: '1.5rem', color: 'var(--status-info)' }}>📝 Contract Explorer</h2>
+                                {contracts.length === 0 ? (
+                                    <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>No contracts found.</p>
+                                ) : (
+                                    <div style={{ overflowX: 'auto' }}>
+                                        <table>
+                                            <thead>
+                                                <tr>
+                                                    <th>Type</th>
+                                                    <th>Entity Name</th>
+                                                    <th>Club</th>
+                                                    <th>Start Date</th>
+                                                    <th>End Date</th>
+                                                    <th>Salary (per week)</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {contracts.map((contract) => (
+                                                    <tr key={contract.contract_id}>
+                                                        <td>
+                                                            <span className={`badge ${contract.contract_type === 'PLAYER' ? 'badge-info' : 'badge-warning'}`}>
+                                                                {contract.contract_type}
+                                                            </span>
+                                                        </td>
+                                                        <td style={{ fontWeight: '600' }}>{contract.player_name || contract.manager_name || 'Unknown'}</td>
+                                                        <td style={{ color: 'var(--text-muted)' }}>{contract.club_name}</td>
+                                                        <td>{new Date(contract.start_date).toLocaleDateString()}</td>
+                                                        <td>{new Date(contract.end_date).toLocaleDateString()}</td>
+                                                        <td style={{ fontWeight: '600' }}>
+                                                            {parseFloat(contract.salary_amount).toLocaleString()} {contract.salary_currency}
+                                                        </td>
+                                                        <td>
+                                                            <span className={`badge ${contract.is_active ? 'badge-success' : 'badge-danger'}`}>
+                                                                {contract.is_active ? 'Active' : 'Expired'}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         {activeTab === 'stats' && (
                             <div className="card">

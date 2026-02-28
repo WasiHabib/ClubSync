@@ -135,20 +135,27 @@ function Navbar({ user, onLogout }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     {user ? (
                         <>
-                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontFamily: 'var(--font-heading)' }}>
-                                {user.username}
-                                <span className="badge badge-info" style={{ marginLeft: '0.5rem' }}>
-                                    {user.role}
+                            <Link to="/profile" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+                                <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontFamily: 'var(--font-heading)', transition: 'color 0.2s', ':hover': { color: 'var(--primary-color)' } }}>
+                                    {user.username}
+                                    <span className="badge badge-info" style={{ marginLeft: '0.5rem' }}>
+                                        {user.role}
+                                    </span>
                                 </span>
-                            </span>
+                            </Link>
                             <button onClick={onLogout} className="btn btn-secondary" style={{ padding: '0.5rem 1.5rem', fontSize: '0.8rem' }}>
                                 LOGOUT
                             </button>
                         </>
                     ) : (
-                        <Link to="/login" className="btn btn-primary" style={{ padding: '0.5rem 1.5rem', fontSize: '0.8rem', textDecoration: 'none' }}>
-                            LOGIN
-                        </Link>
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                            <Link to="/login" className="btn btn-primary" style={{ padding: '0.5rem 1.5rem', fontSize: '0.8rem', textDecoration: 'none' }}>
+                                LOGIN
+                            </Link>
+                            <Link to="/register" className="btn btn-secondary" style={{ padding: '0.5rem 1.5rem', fontSize: '0.8rem', textDecoration: 'none' }}>
+                                REGISTER
+                            </Link>
+                        </div>
                     )}
                 </div>
             </div>

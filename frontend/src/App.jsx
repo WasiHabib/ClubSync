@@ -10,7 +10,10 @@ import ClubDetails from './pages/ClubDetails';
 import StatsCenter from './pages/StatsCenter';
 import AdminPanel from './pages/AdminPanel';
 import Login from './pages/Login';
+import Register from './pages/Register';
 import PlayerSearch from './pages/PlayerSearch';
+import PlayerDetails from './pages/PlayerDetails';
+import Profile from './pages/Profile';
 
 function App() {
     const [user, setUser] = useState(null);
@@ -49,14 +52,17 @@ function App() {
             <Navbar user={user} onLogout={handleLogout} />
             <Routes>
                 <Route path="/login" element={user ? <Navigate to="/" /> : <Login onLogin={handleLogin} />} />
+                <Route path="/register" element={user ? <Navigate to="/" /> : <Register />} />
                 <Route path="/" element={<Home user={user} />} />
                 <Route path="/players" element={<Players user={user} />} />
+                <Route path="/players/:id" element={<PlayerDetails user={user} />} />
                 <Route path="/search" element={<PlayerSearch />} />
                 <Route path="/clubs" element={<Clubs user={user} />} />
                 <Route path="/clubs/:id" element={<ClubDetails user={user} />} />
                 <Route path="/matches" element={<Matches user={user} />} />
-                <Route path="/matches/:id" element={<MatchDetails />} />
+                <Route path="/matches/:id" element={<MatchDetails user={user} />} />
                 <Route path="/stats" element={<StatsCenter />} />
+                <Route path="/profile" element={user ? <Profile user={user} /> : <Navigate to="/login" />} />
                 <Route path="/admin" element={user && user.role === 'ADMIN' ? <AdminPanel /> : <Navigate to="/" />} />
             </Routes>
         </Router>

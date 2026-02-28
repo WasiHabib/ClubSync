@@ -7,6 +7,9 @@ function ClubDetails({ user }) {
     const { id } = useParams();
     const [club, setClub] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState('overview');
+    const [squad, setSquad] = useState([]);
+
     const [showModal, setShowModal] = useState(false);
     const [formData, setFormData] = useState({
         club_name: '',
@@ -56,12 +59,32 @@ function ClubDetails({ user }) {
                     });
                 }
             }
+            if (activeTab === 'squad' && squad.length === 0) {
+                fetchSquad();
+            }
         } catch (error) {
             console.error('Error fetching club details:', error);
         } finally {
             setLoading(false);
         }
     };
+
+    const fetchSquad = async () => {
+        try {
+            const res = await api.get(`/clubs/${id}/players`);
+            if (res.data.success) {
+                setSquad(res.data.data);
+            }
+        } catch (error) {
+            console.error('Error fetching squad:', error);
+        }
+    };
+
+    useEffect(() => {
+        if (activeTab === 'squad' && squad.length === 0) {
+            fetchSquad();
+        }
+    }, [activeTab]);
 
     const handleUpdate = async (e) => {
         e.preventDefault();
@@ -225,41 +248,66 @@ function ClubDetails({ user }) {
                     </div>
                 )}
 
-                <div className="grid grid-2">
-                    {/* Club Into */}
-                    <div className="card">
-                        <h2 style={{ fontSize: '1.5rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem' }}>Club Information</h2>
-                        <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem', background: 'rgba(255,255,255,0.03)', borderRadius: '4px' }}>
-                                <span style={{ color: 'var(--text-muted)' }}>Stadium</span>
-                                <span style={{ fontWeight: '600' }}>{club.stadium_name || 'N/A'}</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem', background: 'rgba(255,255,255,0.03)', borderRadius: '4px' }}>
-                                <span style={{ color: 'var(--text-muted)' }}>Capacity</span>
-                                <span style={{ fontWeight: '600' }}>{club.stadium_capacity ? club.stadium_capacity.toLocaleString() : 'N/A'}</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem', background: 'rgba(255,255,255,0.03)', borderRadius: '4px' }}>
-                                <span style={{ color: 'var(--text-muted)' }}>Head Coach</span>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <span style={{ fontWeight: '600', color: 'var(--status-success)' }}>
-                                        {club.manager ? club.manager.manager_name : 'Vacant'}
-                                    </span>
-                                    {user && user.role === 'ADMIN' && (
-                                        <button
-                                            onClick={() => setShowManagerModal(true)}
-                                            className="btn btn-secondary"
-                                            style={{ padding: '0.1rem 0.4rem', fontSize: '0.7rem' }}
-                                        >
-                                            ✏️
-                                        </button>
-                                    )}
+                {/* Tabs */}
+                <div style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid var(--border-color)', marginBottom: '2rem' }}>
+                    <button
+                        onClick={() => setActiveTab('overview')}
+                        style={{ padding: '0.8rem 1.5rem', background: 'none', border: 'none', borderBottom: activeTab === 'overview' ? '3px solid var(--primary-color)' : '3px solid transparent', color: activeTab === 'overview' ? 'var(--primary-color)' : 'var(--text-secondary)', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s' }}
+                    >
+                        Overview
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('squad')}
+                        style={{ padding: '0.8rem 1.5rem', background: 'none', border: 'none', borderBottom: activeTab === 'squad' ? '3px solid var(--primary-color)' : '3px solid transparent', color: activeTab === 'squad' ? 'var(--primary-color)' : 'var(--text-secondary)', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s' }}
+                    >
+                        Squad
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('manager')}
+                        style={{ padding: '0.8rem 1.5rem', background: 'none', border: 'none', borderBottom: activeTab === 'manager' ? '3px solid var(--primary-color)' : '3px solid transparent', color: activeTab === 'manager' ? 'var(--primary-color)' : 'var(--text-secondary)', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s' }}
+                    >
+                        Manager History
+                    </button>
+                </div>
+
+                {activeTab === 'overview' && (
+                    <div className="grid grid-2">
+                        {/* Club Into */}
+                        <div className="card">
+                            <h2 style={{ fontSize: '1.5rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem' }}>Club Information</h2>
+                            <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem', background: 'rgba(255,255,255,0.03)', borderRadius: '4px' }}>
+                                    <span style={{ color: 'var(--text-muted)' }}>Stadium</span>
+                                    <span style={{ fontWeight: '600' }}>{club.stadium_name || 'N/A'}</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem', background: 'rgba(255,255,255,0.03)', borderRadius: '4px' }}>
+                                    <span style={{ color: 'var(--text-muted)' }}>Capacity</span>
+                                    <span style={{ fontWeight: '600' }}>{club.stadium_capacity ? club.stadium_capacity.toLocaleString() : 'N/A'}</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem', background: 'rgba(255,255,255,0.03)', borderRadius: '4px' }}>
+                                    <span style={{ color: 'var(--text-muted)' }}>Head Coach</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <span style={{ fontWeight: '600', color: 'var(--status-success)' }}>
+                                            {club.manager ? club.manager.manager_name : 'Vacant'}
+                                        </span>
+                                        {user && user.role === 'ADMIN' && (
+                                            <button
+                                                onClick={() => setShowManagerModal(true)}
+                                                className="btn btn-secondary"
+                                                style={{ padding: '0.1rem 0.4rem', fontSize: '0.7rem' }}
+                                            >
+                                                ✏️
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div style={{ marginTop: '2rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                                <h3 style={{ fontSize: '1.2rem', color: 'var(--accent-primary)', margin: 0 }}>🏆 Trophy Cabinet</h3>
+                        {/* Trophy Cabinet */}
+                        <div className="card">
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem' }}>
+                                <h2 style={{ fontSize: '1.5rem', color: 'var(--accent-primary)', margin: 0 }}>🏆 Trophy Cabinet</h2>
                                 {user && user.role === 'ADMIN' && (
                                     <button
                                         onClick={() => setShowTrophyModal(true)}
@@ -271,7 +319,7 @@ function ClubDetails({ user }) {
                                 )}
                             </div>
                             {club.trophies && club.trophies.length > 0 ? (
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '1rem' }}>
                                     {club.trophies.map(trophy => (
                                         <div key={trophy.trophy_id} style={{
                                             padding: '0.5rem 1rem',
@@ -286,65 +334,89 @@ function ClubDetails({ user }) {
                                     ))}
                                 </div>
                             ) : (
-                                <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No major titles yet.</p>
+                                <p style={{ color: 'var(--text-muted)', fontStyle: 'italic', marginTop: '1rem' }}>No major titles yet.</p>
                             )}
                         </div>
                     </div>
+                )}
 
-                    {/* Squad List */}
+                {activeTab === 'squad' && (
                     <div className="card">
                         <h2 style={{ fontSize: '1.5rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             Current Squad
-                            <span className="badge badge-info">{club.players?.length || 0}</span>
+                            <span className="badge badge-info">{squad.length || 0}</span>
                         </h2>
-                        <div style={{ marginTop: '1rem', maxHeight: '500px', overflowY: 'auto' }}>
-                            <table style={{ width: '100%', fontSize: '0.9rem' }}>
+                        <div style={{ marginTop: '1rem', overflowX: 'auto' }}>
+                            <table style={{ width: '100%' }}>
                                 <thead>
                                     <tr>
-                                        <th style={{ padding: '0.5rem' }}>#</th>
-                                        <th style={{ padding: '0.5rem' }}>Pos</th>
-                                        <th style={{ padding: '0.5rem' }}>Player</th>
-                                        <th style={{ padding: '0.5rem' }}>Nat</th>
+                                        <th style={{ padding: '1rem' }}>#</th>
+                                        <th style={{ padding: '1rem' }}>Pos</th>
+                                        <th style={{ padding: '1rem' }}>Player</th>
+                                        <th style={{ padding: '1rem' }}>Nat</th>
+                                        <th style={{ padding: '1rem' }}>Stats (OVR)</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {club.players && club.players.map(player => (
-                                        <tr key={player.player_id}>
-                                            <td style={{ padding: '0.5rem', color: 'var(--text-muted)' }}>{player.jersey_number}</td>
-                                            <td style={{ padding: '0.5rem' }}>
-                                                <span className={`position-badge position-${player.position}`} style={{ width: '24px', height: '24px', fontSize: '0.6rem' }}>
-                                                    {player.position}
-                                                </span>
-                                            </td>
-                                            <td style={{ padding: '0.5rem', fontWeight: '500' }}>
-                                                <Link
-                                                    to={`/players?query=${encodeURIComponent(player.player_name)}`}
-                                                    style={{ color: 'var(--text-primary)', textDecoration: 'none' }}
-                                                    onMouseOver={(e) => e.target.style.color = 'var(--status-success)'}
-                                                    onMouseOut={(e) => e.target.style.color = 'var(--text-primary)'}
-                                                >
-                                                    {player.player_name}
-                                                </Link>
-                                            </td>
-                                            <td style={{ padding: '0.5rem', color: 'var(--text-muted)' }}>{player.nationality}</td>
-                                        </tr>
-                                    ))}
+                                    {squad.map(player => {
+                                        // Calculate simple OVR from attributes if they exist
+                                        let ovr = '-';
+                                        if (player.attributes && typeof player.attributes === 'object') {
+                                            const attrs = Object.values(player.attributes);
+                                            if (attrs.length > 0) {
+                                                ovr = Math.round(attrs.reduce((a, b) => a + b, 0) / attrs.length);
+                                            }
+                                        }
+
+                                        return (
+                                            <tr key={player.player_id}>
+                                                <td style={{ padding: '1rem', color: 'var(--text-muted)' }}>{player.jersey_number || '-'}</td>
+                                                <td style={{ padding: '1rem' }}>
+                                                    <span className={`position-badge position-${player.position}`}>
+                                                        {player.position}
+                                                    </span>
+                                                </td>
+                                                <td style={{ padding: '1rem', fontWeight: '500' }}>
+                                                    <Link
+                                                        to={`/players/${player.player_id}`}
+                                                        style={{ color: 'var(--primary-color)', textDecoration: 'none', fontWeight: '600' }}
+                                                    >
+                                                        {player.player_name}
+                                                    </Link>
+                                                </td>
+                                                <td style={{ padding: '1rem', color: 'var(--text-muted)' }}>{player.nationality}</td>
+                                                <td style={{ padding: '1rem' }}>
+                                                    <span style={{
+                                                        background: ovr >= 80 ? 'var(--success-color)' : ovr >= 70 ? 'var(--primary-color)' : 'var(--bg-tertiary)',
+                                                        padding: '0.2rem 0.6rem',
+                                                        borderRadius: '12px',
+                                                        color: ovr !== '-' ? '#fff' : 'var(--text-muted)',
+                                                        fontWeight: 'bold',
+                                                        fontSize: '0.85rem'
+                                                    }}>
+                                                        {ovr}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
                             </table>
-                            {(!club.players || club.players.length === 0) && (
+                            {squad.length === 0 && (
                                 <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>No active players.</p>
                             )}
                         </div>
                     </div>
-                </div>
+                )}
 
-                {/* Manager History Section */}
-                <div className="card" style={{ marginTop: '2rem' }}>
-                    <h2 style={{ fontSize: '1.5rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem' }}>
-                        👔 Manager History
-                    </h2>
-                    <ManagerHistory clubId={id} />
-                </div>
+                {activeTab === 'manager' && (
+                    <div className="card">
+                        <h2 style={{ fontSize: '1.5rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem' }}>
+                            👔 Manager History
+                        </h2>
+                        <ManagerHistory clubId={id} />
+                    </div>
+                )}
 
                 {showManagerModal && (
                     <div className="modal-overlay">

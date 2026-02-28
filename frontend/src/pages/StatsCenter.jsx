@@ -10,6 +10,10 @@ function StatsCenter() {
     const [selectedSeason, setSelectedSeason] = useState(null);
     const [leagueTable, setLeagueTable] = useState([]);
     const [topScorers, setTopScorers] = useState([]);
+    const [seasonSummary, setSeasonSummary] = useState(null);
+    const [clubs, setClubs] = useState([]);
+    const [selectedClub, setSelectedClub] = useState('');
+    const [clubStats, setClubStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [newSeason, setNewSeason] = useState({
@@ -22,14 +26,51 @@ function StatsCenter() {
 
     useEffect(() => {
         fetchSeasons();
+        fetchClubs();
     }, []);
+
+    const fetchClubs = async () => {
+        try {
+            const response = await api.get('/clubs');
+            if (response.data.success) {
+                setClubs(response.data.data);
+            }
+        } catch (error) { }
+    };
 
     useEffect(() => {
         if (selectedSeason) {
             fetchLeagueTable();
             fetchTopScorers();
+            fetchSeasonSummary();
         }
     }, [selectedSeason]);
+
+    const fetchSeasonSummary = async () => {
+        try {
+            const response = await api.get(`/analytics/season-summary/${selectedSeason}`);
+            if (response.data.success) {
+                setSeasonSummary(response.data.data);
+            }
+        } catch (error) { }
+    };
+
+    useEffect(() => {
+        if (selectedClub && selectedSeason) {
+            fetchClubStats();
+        } else {
+            setClubStats(null);
+        }
+    }, [selectedClub, selectedSeason]);
+
+    const fetchClubStats = async () => {
+        try {
+            const response = await api.get(`/analytics/club-stats/${selectedClub}?seasonId=${selectedSeason}`);
+            if (response.data.success) {
+                setClubStats(response.data.data);
+            }
+        } catch (error) { }
+    };
 
     const fetchSeasons = async () => {
         try {
@@ -237,6 +278,27 @@ function StatsCenter() {
                     </div>
                 )}
 
+                {seasonSummary && seasonSummary.matches && (
+                    <div className="grid grid-4" style={{ marginBottom: '2rem' }}>
+                        <div className="card" style={{ textAlign: 'center', padding: '1.5rem' }}>
+                            <h3 style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>Total Matches</h3>
+                            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--status-info)' }}>{seasonSummary.matches.total_matches}</div>
+                        </div>
+                        <div className="card" style={{ textAlign: 'center', padding: '1.5rem' }}>
+                            <h3 style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>Total Goals</h3>
+                            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--status-success)' }}>{seasonSummary.matches.total_goals || 0}</div>
+                        </div>
+                        <div className="card" style={{ textAlign: 'center', padding: '1.5rem' }}>
+                            <h3 style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>Avg Goals/Match</h3>
+                            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--status-warning)' }}>{Number(seasonSummary.matches.avg_goals_per_match || 0).toFixed(2)}</div>
+                        </div>
+                        <div className="card" style={{ textAlign: 'center', padding: '1.5rem' }}>
+                            <h3 style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>Players Used</h3>
+                            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--accent-cool)' }}>{seasonSummary.players?.total_players || 0}</div>
+                        </div>
+                    </div>
+                )}
+
                 <div className="grid grid-2" style={{ alignItems: 'flex-start' }}>
                     {/* League Table */}
                     <div className="card">
@@ -332,6 +394,57 @@ function StatsCenter() {
                             </>
                         )}
                     </div>
+                </div>
+
+                {/* Club Specific Stats */}
+                <div className="card" style={{ marginTop: '2rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                        <h2 style={{ fontSize: '1.5rem', margin: 0 }}>🛡️ Club Performance Tracker</h2>
+                        <select
+                            className="form-control"
+                            style={{ width: '250px' }}
+                            value={selectedClub}
+                            onChange={(e) => setSelectedClub(e.target.value)}
+                        >
+                            <option value="">Select a Club...</option>
+                            {clubs.map(club => (
+                                <option key={club.club_id} value={club.club_id}>{club.club_name}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {!selectedClub ? (
+                        <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>Select a club to view its specific performance in this season.</p>
+                    ) : clubStats ? (
+                        <div className="grid grid-3" style={{ gap: '1rem' }}>
+                            <div style={{ padding: '1rem', background: 'var(--bg-tertiary)', borderRadius: '8px', textAlign: 'center' }}>
+                                <div style={{ color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Matches</div>
+                                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{clubStats.total_matches}</div>
+                            </div>
+                            <div style={{ padding: '1rem', background: 'rgba(0,255,100,0.1)', borderRadius: '8px', textAlign: 'center' }}>
+                                <div style={{ color: 'var(--status-success)', marginBottom: '0.5rem' }}>Wins</div>
+                                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--status-success)' }}>{clubStats.wins || 0}</div>
+                            </div>
+                            <div style={{ padding: '1rem', background: 'rgba(255,200,0,0.1)', borderRadius: '8px', textAlign: 'center' }}>
+                                <div style={{ color: 'var(--status-warning)', marginBottom: '0.5rem' }}>Draws</div>
+                                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--status-warning)' }}>{clubStats.draws || 0}</div>
+                            </div>
+                            <div style={{ padding: '1rem', background: 'rgba(255,0,0,0.1)', borderRadius: '8px', textAlign: 'center' }}>
+                                <div style={{ color: 'var(--status-danger)', marginBottom: '0.5rem' }}>Losses</div>
+                                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--status-danger)' }}>{clubStats.losses || 0}</div>
+                            </div>
+                            <div style={{ padding: '1rem', background: 'var(--bg-tertiary)', borderRadius: '8px', textAlign: 'center' }}>
+                                <div style={{ color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Goals For</div>
+                                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{clubStats.goals_for || 0}</div>
+                            </div>
+                            <div style={{ padding: '1rem', background: 'var(--bg-tertiary)', borderRadius: '8px', textAlign: 'center' }}>
+                                <div style={{ color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Goals Against</div>
+                                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{clubStats.goals_against || 0}</div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="spinner" style={{ margin: '2rem auto' }}></div>
+                    )}
                 </div>
             </div>
         </div>
