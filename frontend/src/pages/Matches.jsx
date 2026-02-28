@@ -6,6 +6,7 @@ function Matches({ user }) {
     const [matches, setMatches] = useState([]);
     const [seasons, setSeasons] = useState([]);
     const [clubs, setClubs] = useState([]);
+    const [stadiums, setStadiums] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [selectedMatch, setSelectedMatch] = useState(null);
@@ -15,7 +16,7 @@ function Matches({ user }) {
         home_club_id: '',
         away_club_id: '',
         match_date: '',
-        venue: ''
+        stadium_id: ''
     });
     const [eventData, setEventData] = useState({
         event_type: 'GOAL',
@@ -30,6 +31,7 @@ function Matches({ user }) {
         fetchMatches();
         fetchSeasons();
         fetchClubs();
+        fetchStadiums();
     }, []);
 
     const fetchMatches = async () => {
@@ -67,6 +69,17 @@ function Matches({ user }) {
             }
         } catch (error) {
             console.error('Error fetching clubs:', error);
+        }
+    };
+
+    const fetchStadiums = async () => {
+        try {
+            const response = await api.get('/stadiums');
+            if (response.data.success) {
+                setStadiums(response.data.data);
+            }
+        } catch (error) {
+            console.error('Error fetching stadiums:', error);
         }
     };
 
@@ -125,7 +138,7 @@ function Matches({ user }) {
             home_club_id: '',
             away_club_id: '',
             match_date: '',
-            venue: ''
+            stadium_id: ''
         });
     };
 
@@ -326,13 +339,19 @@ function Matches({ user }) {
                                     />
                                 </div>
                                 <div className="form-group">
-                                    <label>Venue</label>
-                                    <input
-                                        type="text"
-                                        value={formData.venue}
-                                        onChange={(e) => setFormData({ ...formData, venue: e.target.value })}
-                                        placeholder="Stadium name"
-                                    />
+                                    <label>Venue (Stadium) *</label>
+                                    <select
+                                        value={formData.stadium_id}
+                                        onChange={(e) => setFormData({ ...formData, stadium_id: e.target.value })}
+                                        required
+                                    >
+                                        <option value="">Select Stadium</option>
+                                        {stadiums.map(stadium => (
+                                            <option key={stadium.stadium_id} value={stadium.stadium_id}>
+                                                {stadium.stadium_name} {stadium.city ? `(${stadium.city})` : ''}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
                             </div>
                             <div className="modal-footer">

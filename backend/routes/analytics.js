@@ -118,11 +118,11 @@ router.get('/player-stats/:playerId', async (req, res) => {
       SELECT 
         p.player_name,
         c.club_name,
-        COUNT(DISTINCT m.match_id) as matches_played,
-        SUM(CASE WHEN e.event_type IN ('GOAL', 'PENALTY') THEN 1 ELSE 0 END) as goals,
-        SUM(CASE WHEN e.event_type = 'ASSIST' THEN 1 ELSE 0 END) as assists,
-        SUM(CASE WHEN e.event_type = 'YELLOW_CARD' THEN 1 ELSE 0 END) as yellow_cards,
-        SUM(CASE WHEN e.event_type = 'RED_CARD' THEN 1 ELSE 0 END) as red_cards
+        COUNT(DISTINCT ${seasonId ? 'CASE WHEN m.season_id = ? THEN m.match_id END' : 'm.match_id'}) as matches_played,
+        COALESCE(SUM(CASE WHEN e.event_type IN ('GOAL', 'PENALTY') ${seasonId ? 'AND m.season_id = ?' : ''} THEN 1 ELSE 0 END), 0) as goals,
+        COALESCE(SUM(CASE WHEN e.event_type = 'ASSIST' ${seasonId ? 'AND m.season_id = ?' : ''} THEN 1 ELSE 0 END), 0) as assists,
+        COALESCE(SUM(CASE WHEN e.event_type = 'YELLOW_CARD' ${seasonId ? 'AND m.season_id = ?' : ''} THEN 1 ELSE 0 END), 0) as yellow_cards,
+        COALESCE(SUM(CASE WHEN e.event_type = 'RED_CARD' ${seasonId ? 'AND m.season_id = ?' : ''} THEN 1 ELSE 0 END), 0) as red_cards
       FROM PLAYER p
       LEFT JOIN CLUB c ON p.current_club_id = c.club_id
       LEFT JOIN EVENTS e ON p.player_id = e.player_id
@@ -130,12 +130,12 @@ router.get('/player-stats/:playerId', async (req, res) => {
       WHERE p.player_id = ?
     `;
 
-        const params = [playerId];
-
+        const params = [];
         if (seasonId) {
-            query += ' AND m.season_id = ?';
-            params.push(seasonId);
+            // Push seasonId for each conditional aggregation
+            params.push(seasonId, seasonId, seasonId, seasonId, seasonId);
         }
+        params.push(playerId);
 
         query += ' GROUP BY p.player_id, p.player_name, c.club_name';
 

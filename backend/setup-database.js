@@ -78,7 +78,6 @@ async function setupDatabase() {
             }
         }
 
-        await connection.query(schemaWithoutDB);
         console.log('✅ Schema imported successfully');
 
         console.log('\n🎉 Database setup completed successfully!');

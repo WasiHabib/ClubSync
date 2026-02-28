@@ -52,13 +52,14 @@ const seedFullData = async () => {
             multipleStatements: true
         });
 
-        // 1. Get clubs
-        console.log('📍 Fetching clubs...');
-        const [clubs] = await connection.query('SELECT club_id, club_name FROM CLUB');
-        console.log(`   Found ${clubs.length} clubs\n`);
+        // 1. Get clubs and stadiums
+        console.log('📍 Fetching clubs and stadiums...');
+        const [clubs] = await connection.query('SELECT club_id, club_name, stadium_id FROM CLUB');
+        const [stadiums] = await connection.query('SELECT stadium_id FROM STADIUM');
+        console.log(`   Found ${clubs.length} clubs and ${stadiums.length} stadiums\n`);
 
-        if (clubs.length === 0) {
-            console.log('❌ No clubs found. Schema not imported correctly.');
+        if (clubs.length === 0 || stadiums.length === 0) {
+            console.log('❌ No clubs or stadiums found. Schema not imported correctly.');
             process.exit(1);
         }
 
@@ -185,10 +186,13 @@ const seedFullData = async () => {
                     const awayScore = Math.floor(Math.random() * 4);
                     const status = Math.random() > 0.3 ? 'COMPLETED' : 'SCHEDULED';
 
+                    // Assign home club's stadium, or pick a random one if not set
+                    const stadium_id = homeClub.stadium_id || stadiums[Math.floor(Math.random() * stadiums.length)].stadium_id;
+
                     const [matchResult] = await connection.query(`
-                        INSERT INTO MATCH_TABLE (season_id, home_club_id, away_club_id, match_date, home_score, away_score, match_status, venue)
+                        INSERT INTO MATCH_TABLE (season_id, home_club_id, away_club_id, match_date, home_score, away_score, match_status, stadium_id)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                    `, [seasonId, homeClub.club_id, awayClub.club_id, matchDate, homeScore, awayScore, status, `${homeClub.club_name} Stadium`]);
+                    `, [seasonId, homeClub.club_id, awayClub.club_id, matchDate, homeScore, awayScore, status, stadium_id]);
 
                     const matchId = matchResult.insertId;
                     matchCount++;

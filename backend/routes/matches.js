@@ -23,11 +23,13 @@ router.get('/', async (req, res) => {
         m.*,
         s.season_name,
         hc.club_name as home_club_name,
-        ac.club_name as away_club_name
+        ac.club_name as away_club_name,
+        st.stadium_name as venue
       FROM MATCH_TABLE m
       JOIN SEASON s ON m.season_id = s.season_id
       JOIN CLUB hc ON m.home_club_id = hc.club_id
       JOIN CLUB ac ON m.away_club_id = ac.club_id
+      LEFT JOIN STADIUM st ON m.stadium_id = st.stadium_id
       WHERE 1=1
     `;
         const params = [];
@@ -71,11 +73,13 @@ router.get('/:id', async (req, res) => {
         m.*,
         s.season_name,
         hc.club_name as home_club_name,
-        ac.club_name as away_club_name
+        ac.club_name as away_club_name,
+        st.stadium_name as venue
       FROM MATCH_TABLE m
       JOIN SEASON s ON m.season_id = s.season_id
       JOIN CLUB hc ON m.home_club_id = hc.club_id
       JOIN CLUB ac ON m.away_club_id = ac.club_id
+      LEFT JOIN STADIUM st ON m.stadium_id = st.stadium_id
       WHERE m.match_id = ?
     `, [id]);
 
@@ -122,7 +126,7 @@ router.post('/', authenticate,
         body('home_club_id').isInt().withMessage('Valid home club ID is required'),
         body('away_club_id').isInt().withMessage('Valid away club ID is required'),
         body('match_date').isISO8601().withMessage('Valid match date is required'),
-        body('venue').optional().isString()
+        body('stadium_id').optional().isInt().withMessage('Valid stadium ID is required')
     ],
     async (req, res) => {
         try {
@@ -136,7 +140,7 @@ router.post('/', authenticate,
                 home_club_id,
                 away_club_id,
                 match_date,
-                venue,
+                stadium_id,
                 referee_name
             } = req.body;
 
@@ -151,9 +155,9 @@ router.post('/', authenticate,
 
             const [result] = await db.query(
                 `INSERT INTO MATCH_TABLE 
-         (season_id, home_club_id, away_club_id, match_date, venue, referee_name, match_status)
+         (season_id, home_club_id, away_club_id, match_date, stadium_id, referee_name, match_status)
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                [season_id, home_club_id, away_club_id, match_date, venue || null, referee_name || null, status]
+                [season_id, home_club_id, away_club_id, match_date, stadium_id || null, referee_name || null, status]
             );
 
             // Access user from request if available (via middleware)
@@ -281,7 +285,7 @@ router.post('/schedule',
         body('season_id').isInt().withMessage('Valid season ID is required'),
         body('start_date').isDate().withMessage('Valid start date is required'),
         body('end_date').isDate().withMessage('Valid end date is required'),
-        body('venue').optional().isString()
+        body('stadium_id').optional().isInt()
     ],
     async (req, res) => {
         const connection = await db.getConnection();
@@ -292,7 +296,7 @@ router.post('/schedule',
                 return res.status(400).json({ success: false, errors: errors.array() });
             }
 
-            const { season_id, start_date, end_date, venue = 'Bangabandhu National Stadium' } = req.body;
+            const { season_id, start_date, end_date, stadium_id = null } = req.body;
 
             await connection.beginTransaction();
 
@@ -325,9 +329,9 @@ router.post('/schedule',
                     // Create match
                     const [result] = await connection.query(
                         `INSERT INTO MATCH_TABLE 
-                         (season_id, home_club_id, away_club_id, match_date, venue, match_status)
+                         (season_id, home_club_id, away_club_id, match_date, stadium_id, match_status)
                          VALUES (?, ?, ?, ?, ?, 'SCHEDULED')`,
-                        [season_id, homeClub.club_id, awayClub.club_id, currentDate.toISOString().split('T')[0], venue]
+                        [season_id, homeClub.club_id, awayClub.club_id, currentDate.toISOString().split('T')[0], stadium_id]
                     );
 
                     createdMatches.push({

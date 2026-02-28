@@ -132,7 +132,7 @@ function AdminPanel() {
                                                                 {contract.contract_type}
                                                             </span>
                                                         </td>
-                                                        <td style={{ fontWeight: '600' }}>{contract.player_name || contract.manager_name || 'Unknown'}</td>
+                                                        <td style={{ fontWeight: '600' }}>{contract.person_name || 'Unknown'}</td>
                                                         <td style={{ color: 'var(--text-muted)' }}>{contract.club_name}</td>
                                                         <td>{new Date(contract.start_date).toLocaleDateString()}</td>
                                                         <td>{new Date(contract.end_date).toLocaleDateString()}</td>

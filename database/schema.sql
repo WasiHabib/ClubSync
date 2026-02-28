@@ -10,17 +10,25 @@ USE clubsync;
 -- CORE ENTITIES
 -- ============================================
 
+-- STADIUM Table: Football venues
+CREATE TABLE STADIUM (
+    stadium_id INT PRIMARY KEY AUTO_INCREMENT,
+    stadium_name VARCHAR(100) NOT NULL UNIQUE,
+    city VARCHAR(100),
+    capacity INT
+) ENGINE=InnoDB;
+
 -- CLUB Table: Football clubs
 CREATE TABLE CLUB (
     club_id INT PRIMARY KEY AUTO_INCREMENT,
     club_name VARCHAR(100) NOT NULL UNIQUE,
     city VARCHAR(100),
     founded_year INT,
-    stadium_name VARCHAR(100),
-    stadium_capacity INT,
+    stadium_id INT,
     club_logo_url VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (stadium_id) REFERENCES STADIUM(stadium_id) ON DELETE SET NULL,
     INDEX idx_club_name (club_name),
     INDEX idx_city (city)
 ) ENGINE=InnoDB;
@@ -47,6 +55,18 @@ CREATE TABLE PLAYER (
     INDEX idx_position (position),
     INDEX idx_current_club (current_club_id),
     INDEX idx_nationality (nationality)
+) ENGINE=InnoDB;
+
+-- TROPHY Table: Club Trophies
+CREATE TABLE TROPHY (
+    trophy_id INT PRIMARY KEY AUTO_INCREMENT,
+    club_id INT NOT NULL,
+    trophy_name VARCHAR(100) NOT NULL,
+    season_won VARCHAR(50) NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (club_id) REFERENCES CLUB(club_id) ON DELETE CASCADE,
+    INDEX idx_club (club_id)
 ) ENGINE=InnoDB;
 
 -- MANAGER Table: Manager/Coach profiles
@@ -122,7 +142,7 @@ CREATE TABLE MATCH_TABLE (
     home_club_id INT NOT NULL,
     away_club_id INT NOT NULL,
     match_date DATETIME NOT NULL,
-    venue VARCHAR(100),
+    stadium_id INT,
     home_score INT DEFAULT 0,
     away_score INT DEFAULT 0,
     match_status ENUM('SCHEDULED', 'LIVE', 'COMPLETED', 'POSTPONED', 'CANCELLED') DEFAULT 'SCHEDULED',
@@ -134,11 +154,13 @@ CREATE TABLE MATCH_TABLE (
     FOREIGN KEY (season_id) REFERENCES SEASON(season_id) ON DELETE CASCADE,
     FOREIGN KEY (home_club_id) REFERENCES CLUB(club_id) ON DELETE CASCADE,
     FOREIGN KEY (away_club_id) REFERENCES CLUB(club_id) ON DELETE CASCADE,
+    FOREIGN KEY (stadium_id) REFERENCES STADIUM(stadium_id) ON DELETE SET NULL,
     CHECK (home_club_id != away_club_id),
     INDEX idx_season (season_id),
     INDEX idx_match_date (match_date),
     INDEX idx_home_club (home_club_id),
     INDEX idx_away_club (away_club_id),
+    INDEX idx_stadium (stadium_id),
     INDEX idx_status (match_status)
 ) ENGINE=InnoDB;
 
@@ -257,12 +279,19 @@ WHERE con.is_active = TRUE AND con.end_date >= CURDATE();
 -- SAMPLE DATA FOR TESTING
 -- ============================================
 
+-- Insert sample stadiums
+INSERT INTO STADIUM (stadium_name, city, capacity) VALUES
+('Bangabandhu National Stadium', 'Dhaka', 36000),
+('Bashundhara Kings Arena', 'Dhaka', 5000),
+('Sylhet District Stadium', 'Sylhet', 25000),
+('Rajshahi District Stadium', 'Rajshahi', 15000);
+
 -- Insert sample clubs
-INSERT INTO CLUB (club_name, city, founded_year, stadium_name, stadium_capacity) VALUES
-('Dhaka Abahani', 'Dhaka', 1972, 'Bangabandhu National Stadium', 36000),
-('Bashundhara Kings', 'Dhaka', 2013, 'Bashundhara Kings Arena', 5000),
-('Mohammedan SC', 'Dhaka', 1936, 'Bangabandhu National Stadium', 36000),
-('Sheikh Jamal DC', 'Dhaka', 1980, 'Bangabandhu National Stadium', 36000);
+INSERT INTO CLUB (club_name, city, founded_year, stadium_id) VALUES
+('Dhaka Abahani', 'Dhaka', 1972, 1),
+('Bashundhara Kings', 'Dhaka', 2013, 2),
+('Mohammedan SC', 'Dhaka', 1936, 1),
+('Sheikh Jamal DC', 'Dhaka', 1980, 1);
 
 -- Insert sample season
 INSERT INTO SEASON (season_name, start_date, end_date, is_active, description) VALUES

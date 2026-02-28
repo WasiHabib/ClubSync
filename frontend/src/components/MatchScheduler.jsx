@@ -3,6 +3,7 @@ import api from '../api';
 
 function MatchScheduler() {
     const [seasons, setSeasons] = useState([]);
+    const [stadiums, setStadiums] = useState([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [createdMatches, setCreatedMatches] = useState([]);
@@ -11,11 +12,12 @@ function MatchScheduler() {
         season_id: '',
         start_date: '',
         end_date: '',
-        venue: 'Bangabandhu National Stadium'
+        stadium_id: ''
     });
 
     useEffect(() => {
         fetchSeasons();
+        fetchStadiums();
     }, []);
 
     const fetchSeasons = async () => {
@@ -28,6 +30,20 @@ function MatchScheduler() {
             console.error('Error fetching seasons:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchStadiums = async () => {
+        try {
+            const response = await api.get('/stadiums');
+            if (response.data.success) {
+                setStadiums(response.data.data);
+                if (response.data.data.length > 0) {
+                    setFormData(prev => ({ ...prev, stadium_id: response.data.data[0].stadium_id }));
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching stadiums:', error);
         }
     };
 
@@ -81,14 +97,20 @@ function MatchScheduler() {
                     </div>
 
                     <div className="form-group">
-                        <label>Default Venue</label>
-                        <input
-                            type="text"
+                        <label>Default Venue (Stadium)</label>
+                        <select
                             className="form-control"
-                            value={formData.venue}
-                            onChange={(e) => setFormData({ ...formData, venue: e.target.value })}
+                            value={formData.stadium_id}
+                            onChange={(e) => setFormData({ ...formData, stadium_id: e.target.value })}
                             required
-                        />
+                        >
+                            <option value="">-- Choose Stadium --</option>
+                            {stadiums.map(stadium => (
+                                <option key={stadium.stadium_id} value={stadium.stadium_id}>
+                                    {stadium.stadium_name} {stadium.city ? `(${stadium.city})` : ''}
+                                </option>
+                            ))}
+                        </select>
                     </div>
                 </div>
 

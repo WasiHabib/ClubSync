@@ -11,10 +11,13 @@ router.get('/', async (req, res) => {
       SELECT 
         c.*,
         COUNT(DISTINCT p.player_id) as player_count,
-        COUNT(DISTINCT m.manager_id) as manager_count
+        COUNT(DISTINCT m.manager_id) as manager_count,
+        st.stadium_name,
+        st.capacity as stadium_capacity
       FROM CLUB c
       LEFT JOIN PLAYER p ON c.club_id = p.current_club_id AND p.is_active = TRUE
       LEFT JOIN MANAGER m ON c.club_id = m.current_club_id AND m.is_active = TRUE
+      LEFT JOIN STADIUM st ON c.stadium_id = st.stadium_id
       GROUP BY c.club_id
       ORDER BY c.club_name
     `);
@@ -35,7 +38,12 @@ router.get('/:id', async (req, res) => {
     try {
         const { id } = req.params;
 
-        const [clubs] = await db.query('SELECT * FROM CLUB WHERE club_id = ?', [id]);
+        const [clubs] = await db.query(`
+          SELECT c.*, st.stadium_name, st.capacity as stadium_capacity 
+          FROM CLUB c 
+          LEFT JOIN STADIUM st ON c.stadium_id = st.stadium_id 
+          WHERE c.club_id = ?
+        `, [id]);
 
         if (clubs.length === 0) {
             return res.status(404).json({ success: false, message: 'Club not found' });
@@ -80,8 +88,7 @@ router.post('/',
         body('club_name').notEmpty().withMessage('Club name is required'),
         body('city').optional().isString(),
         body('founded_year').optional().isInt({ min: 1800, max: new Date().getFullYear() }),
-        body('stadium_name').optional().isString(),
-        body('stadium_capacity').optional().isInt({ min: 0 })
+        body('stadium_id').optional().isInt()
     ],
     async (req, res) => {
         try {
@@ -90,12 +97,12 @@ router.post('/',
                 return res.status(400).json({ success: false, errors: errors.array() });
             }
 
-            const { club_name, city, founded_year, stadium_name, stadium_capacity, club_logo_url } = req.body;
+            const { club_name, city, founded_year, stadium_id, club_logo_url } = req.body;
 
             const [result] = await db.query(
-                `INSERT INTO CLUB (club_name, city, founded_year, stadium_name, stadium_capacity, club_logo_url)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-                [club_name, city || null, founded_year || null, stadium_name || null, stadium_capacity || null, club_logo_url || null]
+                `INSERT INTO CLUB (club_name, city, founded_year, stadium_id, club_logo_url)
+         VALUES (?, ?, ?, ?, ?)`,
+                [club_name, city || null, founded_year || null, stadium_id || null, club_logo_url || null]
             );
 
             res.status(201).json({

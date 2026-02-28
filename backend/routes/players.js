@@ -97,7 +97,7 @@ router.get('/search',
 
             const playersWithParsedAttrs = players.map(player => ({
                 ...player,
-                attributes: player.attributes ? JSON.parse(player.attributes) : null
+                attributes: typeof player.attributes === 'string' ? JSON.parse(player.attributes) : player.attributes
             }));
 
             res.json({
@@ -122,9 +122,10 @@ router.get('/:id', async (req, res) => {
         p.*,
         c.club_name,
         c.city as club_city,
-        c.stadium_name
+        st.stadium_name as stadium_name
       FROM PLAYER p
       LEFT JOIN CLUB c ON p.current_club_id = c.club_id
+      LEFT JOIN STADIUM st ON c.stadium_id = st.stadium_id
       WHERE p.player_id = ?
     `;
 
@@ -136,7 +137,7 @@ router.get('/:id', async (req, res) => {
 
         const player = {
             ...players[0],
-            attributes: players[0].attributes ? JSON.parse(players[0].attributes) : null
+            attributes: typeof players[0].attributes === 'string' ? JSON.parse(players[0].attributes) : players[0].attributes
         };
 
         // Get player contracts
@@ -182,11 +183,11 @@ router.post('/',
         body('date_of_birth').isDate().withMessage('Valid date of birth is required'),
         body('nationality').notEmpty().withMessage('Nationality is required'),
         body('position').isIn(['GK', 'CB', 'LB', 'RB', 'CDM', 'CM', 'CAM', 'LW', 'RW', 'ST']).withMessage('Invalid position'),
-        body('current_club_id').optional().isInt(),
-        body('jersey_number').optional().isInt({ min: 1, max: 99 }),
-        body('height_cm').optional().isInt(),
-        body('weight_kg').optional().isInt(),
-        body('preferred_foot').optional().isIn(['Left', 'Right', 'Both']),
+        body('current_club_id').optional({ checkFalsy: true }).isInt(),
+        body('jersey_number').optional({ checkFalsy: true }).isInt({ min: 1, max: 99 }),
+        body('height_cm').optional({ checkFalsy: true }).isInt(),
+        body('weight_kg').optional({ checkFalsy: true }).isInt(),
+        body('preferred_foot').optional({ checkFalsy: true }).isIn(['Left', 'Right', 'Both']),
         body('attributes').optional().isObject(),
         body('contract').optional().isObject()
     ],
@@ -216,8 +217,8 @@ router.post('/',
             const [result] = await connection.query(
                 `INSERT INTO PLAYER 
          (player_name, date_of_birth, nationality, position, height_cm, weight_kg, 
-          preferred_foot, jersey_number, current_club_id, player_photo_url, attributes)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          preferred_foot, jersey_number, current_club_id, player_photo_url, attributes, is_active)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)`,
                 [
                     player_name,
                     date_of_birth,
@@ -263,7 +264,7 @@ router.post('/',
         } catch (error) {
             await connection.rollback();
             console.error('Error adding player:', error);
-            res.status(500).json({ success: false, message: 'Failed to add player' });
+            res.status(500).json({ success: false, message: 'Failed to add player', error: error.message });
         } finally {
             connection.release();
         }
