@@ -9,14 +9,15 @@ function ClubDetails({ user }) {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('overview');
     const [squad, setSquad] = useState([]);
+    const [stadiums, setStadiums] = useState([]);
+    const [seasons, setSeasons] = useState([]);
 
     const [showModal, setShowModal] = useState(false);
     const [formData, setFormData] = useState({
         club_name: '',
         city: '',
         founded_year: '',
-        stadium_name: '',
-        stadium_capacity: ''
+        stadium_id: ''
     });
 
     const [showManagerModal, setShowManagerModal] = useState(false);
@@ -39,23 +40,35 @@ function ClubDetails({ user }) {
 
     const fetchClubDetails = async () => {
         try {
-            const response = await api.get(`/clubs/${id}`);
-            if (response.data.success) {
-                setClub(response.data.data);
+            const [clubResponse, stadiumsResponse, seasonsResponse] = await Promise.all([
+                api.get(`/clubs/${id}`),
+                api.get('/clubs/stadiums/all'),
+                api.get('/clubs/seasons/all')
+            ]);
+
+            if (stadiumsResponse.data.success) {
+                setStadiums(stadiumsResponse.data.data);
+            }
+            if (seasonsResponse?.data?.success) {
+                setSeasons(seasonsResponse.data.data);
+            }
+
+            if (clubResponse.data.success) {
+                const clubData = clubResponse.data.data;
+                setClub(clubData);
                 // Pre-fill form data
                 setFormData({
-                    club_name: response.data.data.club_name,
-                    city: response.data.data.city,
-                    founded_year: response.data.data.founded_year,
-                    stadium_name: response.data.data.stadium_name,
-                    stadium_capacity: response.data.data.stadium_capacity
+                    club_name: clubData.club_name,
+                    city: clubData.city,
+                    founded_year: clubData.founded_year,
+                    stadium_id: clubData.stadium_id || ''
                 });
 
-                if (response.data.data.manager) {
+                if (clubData.manager) {
                     setManagerData({
-                        manager_name: response.data.data.manager.manager_name,
-                        nationality: response.data.data.manager.nationality,
-                        specialization: response.data.data.manager.specialization || 'Balanced'
+                        manager_name: clubData.manager.manager_name,
+                        nationality: clubData.manager.nationality,
+                        specialization: clubData.manager.specialization || 'Balanced'
                     });
                 }
             }
@@ -222,22 +235,19 @@ function ClubDetails({ user }) {
                                     />
                                 </div>
                                 <div className="form-group">
-                                    <label>Stadium Name</label>
-                                    <input
-                                        type="text"
+                                    <label>Stadium</label>
+                                    <select
                                         className="form-control"
-                                        value={formData.stadium_name}
-                                        onChange={(e) => setFormData({ ...formData, stadium_name: e.target.value })}
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label>Stadium Capacity</label>
-                                    <input
-                                        type="number"
-                                        className="form-control"
-                                        value={formData.stadium_capacity}
-                                        onChange={(e) => setFormData({ ...formData, stadium_capacity: e.target.value })}
-                                    />
+                                        value={formData.stadium_id}
+                                        onChange={(e) => setFormData({ ...formData, stadium_id: e.target.value })}
+                                    >
+                                        <option value="">-- No Stadium --</option>
+                                        {stadiums.map(stadium => (
+                                            <option key={stadium.stadium_id} value={stadium.stadium_id}>
+                                                {stadium.stadium_name} ({stadium.capacity} capacity)
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
                                 <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
                                     <button type="button" onClick={() => setShowModal(false)} className="btn btn-secondary" style={{ flex: 1 }}>Cancel</button>
@@ -475,35 +485,30 @@ function ClubDetails({ user }) {
                             </div>
                             <form onSubmit={handleTrophyAdd}>
                                 <div className="form-group">
-                                    <label>Trophy Name</label>
-                                    <input
-                                        type="text"
+                                    <label>Trophy / Competition</label>
+                                    <select
                                         className="form-control"
                                         value={trophyData.trophy_name}
                                         onChange={(e) => setTrophyData({ ...trophyData, trophy_name: e.target.value })}
-                                        placeholder="e.g., Bangladesh Premier League"
                                         required
-                                    />
+                                    >
+                                        <option value="">-- Select Competition --</option>
+                                        {seasons.map(season => (
+                                            <option key={season.season_id} value={season.season_name}>
+                                                {season.season_name}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
                                 <div className="form-group">
-                                    <label>Season Won</label>
+                                    <label>Year / Season string</label>
                                     <input
                                         type="text"
                                         className="form-control"
                                         value={trophyData.season_won}
                                         onChange={(e) => setTrophyData({ ...trophyData, season_won: e.target.value })}
-                                        placeholder="e.g., 2023-24 or 2024"
+                                        placeholder="e.g., 2024 or 2024-25"
                                         required
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label>Description (Optional)</label>
-                                    <textarea
-                                        className="form-control"
-                                        value={trophyData.description}
-                                        onChange={(e) => setTrophyData({ ...trophyData, description: e.target.value })}
-                                        placeholder="Additional details about this trophy"
-                                        rows="3"
                                     />
                                 </div>
                                 <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>

@@ -4,6 +4,26 @@ import { db } from '../config/database.js';
 
 const router = express.Router();
 
+// GET /api/clubs/stadiums/all - List all stadiums
+router.get('/stadiums/all', async (req, res) => {
+    try {
+        const [stadiums] = await db.query('SELECT stadium_id, stadium_name, capacity FROM STADIUM ORDER BY stadium_name');
+        res.json({ success: true, count: stadiums.length, data: stadiums });
+    } catch (error) {
+        console.error('Error fetching stadiums:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch stadiums' });
+    }
+});// GET /api/clubs/seasons/all - List all seasons
+router.get('/seasons/all', async (req, res) => {
+    try {
+        const [seasons] = await db.query('SELECT season_id, season_name FROM SEASON ORDER BY start_date DESC');
+        res.json({ success: true, count: seasons.length, data: seasons });
+    } catch (error) {
+        console.error('Error fetching seasons:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch seasons' });
+    }
+});
+
 // GET /api/clubs - List all clubs
 router.get('/', async (req, res) => {
     try {
@@ -126,16 +146,19 @@ router.put('/:id', async (req, res) => {
         const { id } = req.params;
         const updates = req.body;
 
+        const allowedFields = ['club_name', 'city', 'founded_year', 'stadium_id', 'club_logo_url'];
         const fields = [];
         const values = [];
 
         Object.keys(updates).forEach(key => {
-            fields.push(`${key} = ?`);
-            values.push(updates[key]);
+            if (allowedFields.includes(key)) {
+                fields.push(`${key} = ?`);
+                values.push(updates[key] === '' ? null : updates[key]);
+            }
         });
 
         if (fields.length === 0) {
-            return res.status(400).json({ success: false, message: 'No fields to update' });
+            return res.status(400).json({ success: false, message: 'No valid fields provided to update' });
         }
 
         values.push(id);
@@ -174,25 +197,73 @@ router.put('/:id/manager', async (req, res) => {
         // Check if club already has a manager
         const [managers] = await db.query('SELECT * FROM MANAGER WHERE current_club_id = ? AND is_active = TRUE', [id]);
 
-        if (managers.length > 0) {
-            // Update existing manager
-            await db.query(
-                'UPDATE MANAGER SET manager_name = ?, nationality = ?, specialization = ? WHERE manager_id = ?',
-                [manager_name, nationality, specialization || 'Balanced', managers[0].manager_id]
-            );
-        } else {
-            // Create new manager
-            await db.query(
-                `INSERT INTO MANAGER (manager_name, nationality, specialization, current_club_id, date_of_birth) 
-                 VALUES (?, ?, ?, ?, CURDATE())`, // Default DOB to today if not provided (Simplification)
-                [manager_name, nationality, specialization || 'Balanced', id]
-            );
-        }
+        const connection = await db.getConnection();
+        await connection.beginTransaction();
 
-        res.json({
-            success: true,
-            message: 'Manager updated successfully'
-        });
+        try {
+            if (managers.length > 0) {
+                const currentManager = managers[0];
+                if (currentManager.manager_name !== manager_name) {
+                    // It's a new person. Terminate old manager's contract.
+                    await connection.query(
+                        'UPDATE CONTRACTS SET end_date = CURDATE(), is_active = FALSE WHERE manager_id = ? AND club_id = ? AND is_active = TRUE',
+                        [currentManager.manager_id, id]
+                    );
+
+                    // Deactivate old manager's club association
+                    await connection.query(
+                        'UPDATE MANAGER SET current_club_id = NULL WHERE manager_id = ?',
+                        [currentManager.manager_id]
+                    );
+
+                    // Insert new manager
+                    const [managerResult] = await connection.query(
+                        `INSERT INTO MANAGER (manager_name, nationality, specialization, current_club_id, date_of_birth) 
+                         VALUES (?, ?, ?, ?, CURDATE())`,
+                        [manager_name, nationality, specialization || 'Balanced', id]
+                    );
+
+                    // Insert new contract
+                    await connection.query(
+                        `INSERT INTO CONTRACTS (club_id, manager_id, contract_type, start_date, is_active, salary_amount) 
+                         VALUES (?, ?, 'MANAGER', CURDATE(), TRUE, 50000)`,
+                        [id, managerResult.insertId]
+                    );
+                } else {
+                    // Update existing manager details
+                    await connection.query(
+                        'UPDATE MANAGER SET nationality = ?, specialization = ? WHERE manager_id = ?',
+                        [nationality, specialization || 'Balanced', currentManager.manager_id]
+                    );
+                }
+            } else {
+                // No existing manager, create new manager
+                const [managerResult] = await connection.query(
+                    `INSERT INTO MANAGER (manager_name, nationality, specialization, current_club_id, date_of_birth) 
+                     VALUES (?, ?, ?, ?, CURDATE())`,
+                    [manager_name, nationality, specialization || 'Balanced', id]
+                );
+
+                // Insert new contract
+                await connection.query(
+                    `INSERT INTO CONTRACTS (club_id, manager_id, contract_type, start_date, is_active, salary_amount) 
+                     VALUES (?, ?, 'MANAGER', CURDATE(), TRUE, 50000)`,
+                    [id, managerResult.insertId]
+                );
+            }
+
+            await connection.commit();
+            connection.release();
+
+            res.json({
+                success: true,
+                message: 'Manager updated successfully'
+            });
+        } catch (txnError) {
+            await connection.rollback();
+            connection.release();
+            throw txnError;
+        }
     } catch (error) {
         console.error('Error updating manager:', error);
         res.status(500).json({ success: false, message: 'Failed to update manager' });

@@ -38,10 +38,10 @@ const randomStats = (position) => {
     );
 };
 
-const firstNames = ['Md.', 'Tarek', 'Jamal', 'Sohel', 'Ripon', 'Nasir', 'Atiqur', 'Yeasin', 'Rakib', 'Sabbir', 'Topu', 'Bishwanath', 'Raihan', 'Rabiul', 'Mahbubur'];
-const lastNames = ['Rahman', 'Hossain', 'Ahmed', 'Islam', 'Rana', 'Khan', 'Bhuyan', 'Arafat', 'Hassan', 'Ali', 'Uddin', 'Mia', 'Sheikh', 'Kabir', 'Chowdhury'];
-const foreignFirstNames = ['Roberto', 'Jonathan', 'Michael', 'Raphael', 'Oscar', 'Juan', 'Diego', 'Carlos', 'Pedro', 'Antonio', 'Mamadou', 'Youssef'];
-const foreignLastNames = ['Silva', 'Santos', 'Rodriguez', 'Gonzalez', 'Martinez', 'Fernandez', 'Garcia', 'Lopez', 'Diarra', 'Toure', 'Keita', 'Cisse'];
+const firstNames = ['Mueez', 'Shadab', 'Tahsan', 'Nafiz', 'Mirza', 'Subarno', 'Samiul', 'Mahmudul', 'Rad', 'Tanvir', 'Kazi', 'Isfak', 'Wasi', 'Hazma', 'Ariq'];
+const lastNames = ['Musabbir', 'Habib', 'Lihan', 'Zia', 'Adnan', 'Neel', 'Islam', 'Hasan', 'Daiyan', 'Mahmud', 'Badrul', 'Iqbal', 'Habib', 'Chowdhury', 'Belal'];
+const foreignFirstNames = ['Demba', 'Katim', 'Wirba', 'Ashraf', 'Bellou', 'Amadu', 'Sunjo', 'Carlos', 'Pedro', 'Antonio', 'Mamadou', 'Youssef'];
+const foreignLastNames = ['Silva', 'Toppe', 'Gaye', 'Gonzalez', 'Martinez', 'Fernandez', 'Garcia', 'Lopez', 'Diarra', 'Toure', 'Keita', 'Cisse'];
 const nationalities = ['Bangladesh', 'Brazil', 'Argentina', 'Mali', 'Senegal', 'Nigeria', 'Ghana', 'Colombia', 'Uruguay'];
 
 const positions = ['GK', 'CB', 'LB', 'RB', 'CDM', 'CM', 'CAM', 'LW', 'RW', 'ST'];
