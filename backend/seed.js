@@ -1,8 +1,15 @@
 import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
+import { createAdmin } from './create-admin.js';
 
-dotenv.config();
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+dotenv.config({ path: join(__dirname, '.env') });
 
 // Helper to generate random date
 const randomDate = (start, end) => {
@@ -64,19 +71,7 @@ const seedFullData = async () => {
         }
 
         // 2. Create admin user
-        console.log('👤 Creating admin user...');
-        const passwordHash = await bcrypt.hash('admin123', 10);
-        const [existingUser] = await connection.query('SELECT user_id FROM APP_USER WHERE username = ?', ['admin']);
-
-        if (existingUser.length === 0) {
-            await connection.query(`
-                INSERT INTO APP_USER (username, email, password_hash, full_name, role, is_active)
-                VALUES ('admin', 'admin@clubsync.bd', ?, 'System Administrator', 'ADMIN', TRUE)
-            `, [passwordHash]);
-            console.log('   ✓ Admin user created (username: admin, password: admin123)\n');
-        } else {
-            console.log('   ℹ Admin user already exists\n');
-        }
+        await createAdmin(connection);
 
         // 3. Create season
         console.log('📅 Creating season...');
