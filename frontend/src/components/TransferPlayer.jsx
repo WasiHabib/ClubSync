@@ -22,7 +22,7 @@ function TransferPlayer() {
     const fetchData = async () => {
         try {
             const [playersRes, clubsRes] = await Promise.all([
-                api.get('/players'),
+                api.get('/players?limit=500'),
                 api.get('/clubs')
             ]);
 

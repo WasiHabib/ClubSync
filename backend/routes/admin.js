@@ -4,6 +4,11 @@ import { authenticate, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
 
+const safeParse = (val) => {
+    if (typeof val !== 'string') return val;
+    try { return JSON.parse(val); } catch { return val; }
+};
+
 // All admin routes require authentication and admin role
 router.use(authenticate);
 router.use(authorize('ADMIN'));
@@ -115,8 +120,8 @@ router.get('/audit-logs', async (req, res) => {
         // Parse JSON fields
         const logsWithParsedJson = logs.map(log => ({
             ...log,
-            old_values: log.old_values ? JSON.parse(log.old_values) : null,
-            new_values: log.new_values ? JSON.parse(log.new_values) : null
+            old_values: log.old_values ? safeParse(log.old_values) : null,
+            new_values: log.new_values ? safeParse(log.new_values) : null
         }));
 
         res.json({
