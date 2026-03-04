@@ -1,6 +1,7 @@
 import express from 'express';
 import { body, query, validationResult } from 'express-validator';
 import { db } from '../config/database.js';
+import { logAudit } from '../utils/audit.js';
 
 const router = express.Router();
 
@@ -255,6 +256,13 @@ router.post('/',
             }
 
             await connection.commit();
+
+            // Audit log player creation
+            await logAudit(
+                req.user?.user_id || null, 'INSERT', 'PLAYER', playerId,
+                null,
+                { name: player_name, position, nationality, club_id: current_club_id || null }
+            );
 
             res.status(201).json({
                 success: true,

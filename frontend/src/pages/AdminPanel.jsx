@@ -291,35 +291,74 @@ function AdminPanel() {
 
                         {activeTab === 'audit' && (
                             <div className="card">
-                                <h2 style={{ marginBottom: '1.5rem', color: 'var(--status-warning)' }}>Audit Trail</h2>
+                                <h2 style={{ marginBottom: '1.5rem', color: 'var(--status-warning)' }}>
+                                    🔎 System Audit Trail
+                                </h2>
+                                <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
+                                    Records all Create and Delete actions across Managers, Players, and Clubs. Logs are immutable.
+                                </p>
                                 <div style={{ overflowX: 'auto' }}>
                                     <table>
                                         <thead>
                                             <tr>
-                                                <th>Time</th>
-                                                <th>User</th>
+                                                <th>Timestamp</th>
+                                                <th>Performed By</th>
                                                 <th>Action</th>
-                                                <th>Table</th>
-                                                <th>Record ID</th>
+                                                <th>Entity Type</th>
+                                                <th>Entity ID</th>
+                                                <th>Before → After</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {auditLogs.map((log, i) => (
-                                                <tr key={log.log_id}>
-                                                    <td>{new Date(log.created_at).toLocaleString()}</td>
-                                                    <td>{log.username || 'System'}</td>
-                                                    <td>
-                                                        <span className={`badge ${log.action === 'INSERT' ? 'badge-success' :
-                                                            log.action === 'UPDATE' ? 'badge-warning' :
-                                                                'badge-danger'
-                                                            } `}>
-                                                            {log.action}
-                                                        </span>
+                                            {auditLogs.length === 0 ? (
+                                                <tr>
+                                                    <td colSpan="6" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                                                        No audit logs found.
                                                     </td>
-                                                    <td>{log.table_name}</td>
-                                                    <td>{log.record_id}</td>
                                                 </tr>
-                                            ))}
+                                            ) : auditLogs.map((log) => {
+                                                let oldVals = null;
+                                                let newVals = null;
+                                                try { oldVals = log.old_values ? (typeof log.old_values === 'string' ? JSON.parse(log.old_values) : log.old_values) : null; } catch (e) { }
+                                                try { newVals = log.new_values ? (typeof log.new_values === 'string' ? JSON.parse(log.new_values) : log.new_values) : null; } catch (e) { }
+
+                                                const primaryName = newVals?.name || oldVals?.name || '—';
+
+                                                return (
+                                                    <tr key={log.log_id}>
+                                                        <td style={{ whiteSpace: 'nowrap' }}>{new Date(log.created_at).toLocaleString()}</td>
+                                                        <td style={{ fontWeight: '600' }}>{log.username || <span style={{ color: 'var(--text-muted)' }}>System</span>}</td>
+                                                        <td>
+                                                            <span className={`badge ${log.action === 'INSERT' ? 'badge-success' :
+                                                                    log.action === 'DELETE' ? 'badge-danger' :
+                                                                        'badge-warning'
+                                                                }`}>
+                                                                {log.action}
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <span className="badge badge-info">{log.table_name}</span>
+                                                        </td>
+                                                        <td style={{ textAlign: 'center' }}>#{log.record_id}</td>
+                                                        <td style={{ maxWidth: '300px' }}>
+                                                            {(oldVals || newVals) ? (
+                                                                <div style={{ fontSize: '0.8rem', lineHeight: '1.6' }}>
+                                                                    {oldVals && (
+                                                                        <div style={{ color: 'var(--status-danger)', opacity: 0.85 }}>
+                                                                            <strong>Before:</strong> {Object.entries(oldVals).map(([k, v]) => `${k}: ${v}`).join(', ')}
+                                                                        </div>
+                                                                    )}
+                                                                    {newVals && (
+                                                                        <div style={{ color: 'var(--status-success)', opacity: 0.9 }}>
+                                                                            <strong>After:</strong> {Object.entries(newVals).map(([k, v]) => `${k}: ${v}`).join(', ')}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            ) : primaryName}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
                                         </tbody>
                                     </table>
                                 </div>

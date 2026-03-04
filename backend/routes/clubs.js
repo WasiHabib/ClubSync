@@ -1,6 +1,7 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
 import { db } from '../config/database.js';
+import { logAudit } from '../utils/audit.js';
 
 const router = express.Router();
 
@@ -125,10 +126,19 @@ router.post('/',
                 [club_name, city || null, founded_year || null, stadium_id || null, club_logo_url || null]
             );
 
+            const clubId = result.insertId;
+
+            // Audit log club creation
+            await logAudit(
+                req.user?.user_id || null, 'INSERT', 'CLUB', clubId,
+                null,
+                { name: club_name, city: city || null }
+            );
+
             res.status(201).json({
                 success: true,
                 message: 'Club created successfully',
-                data: { club_id: result.insertId }
+                data: { club_id: clubId }
             });
         } catch (error) {
             if (error.code === 'ER_DUP_ENTRY') {

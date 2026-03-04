@@ -79,6 +79,20 @@ function Managers({ user }) {
         });
     };
 
+    const handleDelete = async (manager) => {
+        if (!confirm(`Deactivate manager "${manager.manager_name}"? This is a soft delete — historical records will be preserved.`)) return;
+        try {
+            const response = await api.delete(`/managers/${manager.manager_id}`);
+            if (response.data.success) {
+                alert(response.data.message);
+                fetchManagers();
+            }
+        } catch (error) {
+            const msg = error.response?.data?.message || 'Failed to delete manager';
+            alert(msg);
+        }
+    };
+
     const filteredManagers = managers.filter(manager => {
         const query = searchQuery.toLowerCase();
         return (
@@ -135,6 +149,7 @@ function Managers({ user }) {
                                     <th>Nationality</th>
                                     <th>Specialization</th>
                                     <th>Age</th>
+                                    {user && user.role === 'ADMIN' && <th>Actions</th>}
                                 </tr>
                             </thead>
                             <tbody>
@@ -154,14 +169,25 @@ function Managers({ user }) {
                                             <td>{manager.nationality}</td>
                                             <td>
                                                 <span className={`badge ${manager.specialization === 'Offensive' ? 'badge-danger' :
-                                                        manager.specialization === 'Defensive' ? 'badge-info' :
-                                                            manager.specialization === 'Youth Development' ? 'badge-success' :
-                                                                'badge-warning'
+                                                    manager.specialization === 'Defensive' ? 'badge-info' :
+                                                        manager.specialization === 'Youth Development' ? 'badge-success' :
+                                                            'badge-warning'
                                                     }`}>
                                                     {manager.specialization}
                                                 </span>
                                             </td>
                                             <td>{age}</td>
+                                            {user && user.role === 'ADMIN' && (
+                                                <td>
+                                                    <button
+                                                        onClick={() => handleDelete(manager)}
+                                                        className="btn btn-danger"
+                                                        style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
+                                                    >
+                                                        Deactivate
+                                                    </button>
+                                                </td>
+                                            )}
                                         </tr>
                                     );
                                 })}

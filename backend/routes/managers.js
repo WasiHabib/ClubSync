@@ -1,6 +1,7 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
 import { db } from '../config/database.js';
+import { logAudit } from '../utils/audit.js';
 
 const router = express.Router();
 
@@ -76,6 +77,14 @@ router.post('/', [
             }
 
             await connection.commit();
+
+            // Audit log the creation
+            await logAudit(
+                req.user?.user_id || null, 'INSERT', 'MANAGER', newManagerId,
+                null,
+                { name: manager_name, specialization, club_id: club_id || null }
+            );
+
             res.status(201).json({ success: true, message: 'Manager created successfully', data: { manager_id: newManagerId } });
         } catch (txnError) {
             await connection.rollback();
@@ -184,6 +193,47 @@ router.post('/:id/transfer', [
     } catch (error) {
         console.error('Manager transfer error:', error);
         res.status(500).json({ success: false, message: 'Manager transfer failed' });
+    }
+});
+
+// DELETE /api/managers/:id - Soft delete a manager
+router.delete('/:id', async (req, res) => {
+    try {
+        const managerId = req.params.id;
+
+        // Fetch manager first
+        const [managers] = await db.query('SELECT * FROM MANAGER WHERE manager_id = ? AND is_active = TRUE', [managerId]);
+        if (managers.length === 0) {
+            return res.status(404).json({ success: false, message: 'Manager not found or already inactive' });
+        }
+        const manager = managers[0];
+
+        // Block deletion if active contract exists
+        const [activeContracts] = await db.query(
+            'SELECT contract_id FROM CONTRACTS WHERE manager_id = ? AND is_active = TRUE',
+            [managerId]
+        );
+        if (activeContracts.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Cannot delete a manager with an active contract. Please transfer or terminate their contract first.'
+            });
+        }
+
+        // Soft delete
+        await db.query('UPDATE MANAGER SET is_active = FALSE WHERE manager_id = ?', [managerId]);
+
+        // Audit log
+        await logAudit(
+            req.user?.user_id || null, 'DELETE', 'MANAGER', managerId,
+            { name: manager.manager_name, specialization: manager.specialization, club_id: manager.current_club_id, is_active: true },
+            { name: manager.manager_name, specialization: manager.specialization, club_id: manager.current_club_id, is_active: false }
+        );
+
+        res.json({ success: true, message: `Manager '${manager.manager_name}' has been deactivated.` });
+    } catch (error) {
+        console.error('Error deleting manager:', error);
+        res.status(500).json({ success: false, message: 'Failed to delete manager' });
     }
 });
 
