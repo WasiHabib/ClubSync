@@ -260,4 +260,30 @@ router.get('/transfer-history', async (req, res) => {
     }
 });
 
+// GET /api/admin/manager-transfer-history - Get all manager transfers
+router.get('/manager-transfer-history', async (req, res) => {
+    try {
+        const [transfers] = await db.query(`
+      SELECT 
+        t.*,
+        m.manager_name,
+        fc.club_name as from_club_name,
+        tc.club_name as to_club_name
+      FROM MANAGER_TRANSFER_HISTORY t
+      JOIN MANAGER m ON t.manager_id = m.manager_id
+      LEFT JOIN CLUB fc ON t.from_club_id = fc.club_id
+      JOIN CLUB tc ON t.to_club_id = tc.club_id
+      ORDER BY t.transfer_date DESC, t.created_at DESC
+    `);
+
+        res.json({
+            success: true,
+            data: transfers
+        });
+    } catch (error) {
+        console.error('Error fetching manager transfer history:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch manager transfer history' });
+    }
+});
+
 export default router;

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Players from './pages/Players';
+import Managers from './pages/Managers';
 import Matches from './pages/Matches';
 import MatchDetails from './pages/MatchDetails';
 import Clubs from './pages/Clubs';
@@ -56,6 +57,7 @@ function App() {
                 <Route path="/" element={<Home user={user} />} />
                 <Route path="/players" element={<Players user={user} />} />
                 <Route path="/players/:id" element={<PlayerDetails user={user} />} />
+                <Route path="/managers" element={<Managers user={user} />} />
                 <Route path="/search" element={<PlayerSearch />} />
                 <Route path="/clubs" element={<Clubs user={user} />} />
                 <Route path="/clubs/:id" element={<ClubDetails user={user} />} />

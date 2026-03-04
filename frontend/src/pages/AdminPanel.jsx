@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import api from '../api';
 import TransferPlayer from '../components/TransferPlayer';
+import TransferManager from '../components/TransferManager';
 
 function AdminPanel() {
     const [activeTab, setActiveTab] = useState('transfer');
     const [users, setUsers] = useState([]);
     const [auditLogs, setAuditLogs] = useState([]);
     const [transferHistory, setTransferHistory] = useState([]);
+    const [managerTransferHistory, setManagerTransferHistory] = useState([]);
     const [contracts, setContracts] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -28,9 +30,15 @@ function AdminPanel() {
                     setAuditLogs(response.data.data);
                 }
             } else if (activeTab === 'stats') {
-                const response = await api.get('/admin/transfer-history');
-                if (response.data.success) {
-                    setTransferHistory(response.data.data);
+                const [transferRes, managerTransferRes] = await Promise.all([
+                    api.get('/admin/transfer-history'),
+                    api.get('/admin/manager-transfer-history')
+                ]);
+                if (transferRes.data.success) {
+                    setTransferHistory(transferRes.data.data);
+                }
+                if (managerTransferRes.data.success) {
+                    setManagerTransferHistory(managerTransferRes.data.data);
                 }
             } else if (activeTab === 'contracts') {
                 const response = await api.get('/admin/contracts');
@@ -103,7 +111,12 @@ function AdminPanel() {
                     </div>
                 ) : (
                     <>
-                        {activeTab === 'transfer' && <TransferPlayer />}
+                        {activeTab === 'transfer' && (
+                            <>
+                                <TransferPlayer />
+                                <TransferManager />
+                            </>
+                        )}
 
                         {activeTab === 'contracts' && (
                             <div className="card">
@@ -175,6 +188,38 @@ function AdminPanel() {
                                                     <tr key={transfer.transfer_id}>
                                                         <td>{new Date(transfer.transfer_date).toLocaleDateString()}</td>
                                                         <td style={{ fontWeight: '600' }}>{transfer.player_name}</td>
+                                                        <td style={{ color: 'var(--text-muted)' }}>{transfer.from_club_name || 'Free Agent'}</td>
+                                                        <td style={{ color: 'var(--status-success)', fontWeight: '500' }}>{transfer.to_club_name}</td>
+                                                        <td style={{ fontWeight: '600' }}>
+                                                            {parseFloat(transfer.transfer_fee).toLocaleString()}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+
+                                <h2 style={{ marginBottom: '1.5rem', marginTop: '3rem', color: 'var(--status-info)' }}>👔 Manager Transfer History</h2>
+                                {managerTransferHistory.length === 0 ? (
+                                    <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>No manager transfers recorded yet.</p>
+                                ) : (
+                                    <div style={{ overflowX: 'auto' }}>
+                                        <table>
+                                            <thead>
+                                                <tr>
+                                                    <th>Date</th>
+                                                    <th>Manager</th>
+                                                    <th>From</th>
+                                                    <th>To</th>
+                                                    <th>Compensation (BDT)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {managerTransferHistory.map((transfer, i) => (
+                                                    <tr key={transfer.transfer_id}>
+                                                        <td>{new Date(transfer.transfer_date).toLocaleDateString()}</td>
+                                                        <td style={{ fontWeight: '600' }}>{transfer.manager_name}</td>
                                                         <td style={{ color: 'var(--text-muted)' }}>{transfer.from_club_name || 'Free Agent'}</td>
                                                         <td style={{ color: 'var(--status-success)', fontWeight: '500' }}>{transfer.to_club_name}</td>
                                                         <td style={{ fontWeight: '600' }}>

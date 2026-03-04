@@ -13,6 +13,7 @@ import analyticsRouter from './routes/analytics.js';
 import authRouter from './routes/auth.js';
 import adminRouter from './routes/admin.js';
 import stadiumsRouter from './routes/stadiums.js';
+import managersRouter from './routes/managers.js';
 
 // Load environment variables
 dotenv.config();
@@ -47,6 +48,7 @@ app.use('/api/analytics', analyticsRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/stadiums', stadiumsRouter);
+app.use('/api/managers', managersRouter);
 
 // 404 handler
 app.use((req, res) => {
