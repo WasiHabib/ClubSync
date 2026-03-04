@@ -97,7 +97,7 @@ router.get('/search',
 
             const playersWithParsedAttrs = players.map(player => ({
                 ...player,
-                attributes: player.attributes ? JSON.parse(player.attributes) : null
+                attributes: typeof player.attributes === 'string' ? JSON.parse(player.attributes) : player.attributes
             }));
 
             res.json({
